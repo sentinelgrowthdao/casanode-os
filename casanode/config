@@ -1,0 +1,5 @@
+IMG_NAME="casanode-os"
+PI_GEN_RELEASE="Casanode"
+TARGET_HOSTNAME="casanode"
+DEPLOY_COMPRESSION="none"
+ENABLE_SSH=1

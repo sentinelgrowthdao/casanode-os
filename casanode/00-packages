@@ -1,0 +1,13 @@
+git
+curl
+apt-transport-https
+ca-certificates
+gnupg
+lsb-release
+iptables
+ufw
+build-essential
+uidmap
+dbus-user-session
+fuse-overlayfs
+dbus-x11

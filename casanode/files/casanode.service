@@ -1,0 +1,12 @@
+[Unit]
+Description=Casasnode Service
+After=network.target casanode-startup.service
+Requires=casanode-startup.service
+
+[Service]
+ExecStart=npm --prefix /opt/casanode/casanode-ble/app run dev
+User=casanode
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
