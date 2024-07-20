@@ -60,10 +60,6 @@ rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/
 # Make the 00-run.sh script executable
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 
-# Download the dvpn-node-manager GPG key
-gpg --keyserver keyserver.ubuntu.com --recv-keys 1E4DCBDC436F95468F1FEB793B604A1F5EE3D8E5
-gpg --export 1E4DCBDC436F95468F1FEB793B604A1F5EE3D8E5 | tee "${PI_GEN_DIR}/stage2/04-casanode/files/foxinou_dvpn-node-manager.gpg" > /dev/null
-
 # Build the pi-gen image
 cd "${PI_GEN_DIR}/" || error_exit "Failed to change directory to ${PI_GEN_DIR}."
 CLEAN=1 bash build-docker.sh || error_exit "Failed to build the pi-gen image."

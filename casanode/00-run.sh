@@ -17,22 +17,6 @@ apt-get update
 apt-get install -y nodejs
 EOF
 
-# Add dvpn-node-manager repository
-echo "Adding dvpn-node-manager repository..."
-echo "deb http://ppa.launchpad.net/foxinou/dvpn-node-manager/ubuntu jammy main" | tee -a "${ROOTFS_DIR}/etc/apt/sources.list"
-echo "deb-src http://ppa.launchpad.net/foxinou/dvpn-node-manager/ubuntu jammy main" | tee -a "${ROOTFS_DIR}/etc/apt/sources.list"
-
-# Add GPG key and repository
-echo "Adding dvpn-node-manager GPG key..."
-install -m 644 files/foxinou_dvpn-node-manager.gpg "${ROOTFS_DIR}/etc/apt/trusted.gpg.d/foxinou_dvpn-node-manager.gpg"
-
-# Install dvpn-node-manager
-echo "Installing dvpn-node-manager..."
-on_chroot << EOF
-apt-get update
-# apt-get install -y dvpn-node-manager
-EOF
-
 # Git clone
 echo "Cloning repository..."
 git clone https://github.com/sentinelgrowthdao/casanode-ble "${ROOTFS_DIR}/opt/casanode/casanode-ble/"
