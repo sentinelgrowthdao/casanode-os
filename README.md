@@ -7,7 +7,7 @@ This Git repository allows you to generate a Casanode image installable on a Ras
 Before starting, ensure you have the following:
 
 1. A Raspberry Pi with a 64-bit operating system.
-2. The necessary dependencies related to the pi-gen repository. Install them by running the following command:
+2. The necessary dependencies related to the [pi-gen repository](https://github.com/RPi-Distro/pi-gen). Install them by running the following command:
 
 	```bash
 	apt-get install coreutils quilt parted qemu-user-static debootstrap zerofree zip \
