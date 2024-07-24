@@ -64,5 +64,9 @@ echo "Enabling systemd service..."
 ln -sv "/lib/systemd/system/casanode.service" "$ROOTFS_DIR/etc/systemd/system/multi-user.target.wants/casanode.service"
 ln -sv "/lib/systemd/system/casanode-startup.service" "$ROOTFS_DIR/etc/systemd/system/multi-user.target.wants/casanode-startup.service"
 
+# Create logrotate configuration
+echo "Creating logrotate configuration..."
+install -m 644 files/logrotate "${ROOTFS_DIR}/etc/logrotate.d/casanode"
+
 echo "End of casanode configuration."
 exit 0
