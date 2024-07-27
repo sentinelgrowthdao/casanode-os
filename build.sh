@@ -80,4 +80,4 @@ else
 	echo "Container pigen_work does not exist."
 fi
 
-echo "Build completed successfully and container removed."
+echo -e "\e[32mBuild completed successfully and container removed.\e[0m"
