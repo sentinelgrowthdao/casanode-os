@@ -81,8 +81,13 @@ else
 fi
 
 # Move deploy directory to casanode directory
-if [ -d "deploy" ]; then
+if [ -d "deploy" ]
+then
+	# If the deploy directory already exists, remove it
+	[ -d "../deploy" ] && rm -rf ../deploy
+	# Move the deploy directory to the casanode directory
 	mv deploy/ "../" || error_exit "Failed to move deploy directory."
+	
 	echo -e "\e[32mBuild completed successfully, you can find the image in deploy directory.\e[0m"
 else
 	error_exit "Deploy directory not found, build failed."
