@@ -15,6 +15,14 @@ COMMIT_HASH="37f9ba6e3e8e6d12f5cdfc3335926d83abe9de38"
 while [[ "$#" -gt 0 ]]
 do
 	case "$1" in
+		--compression=*)
+			COMPRESSION="${1#*=}"
+			if [[ ! "$COMPRESSION" =~ ^(zip|gz|xz)$ ]]
+			then
+				error_exit "Invalid value for compression. Valid options are zip, gz, xz."
+			fi
+			shift
+			;;
 		--insecure)
 			INSECURE="insecure"
 			shift
@@ -78,6 +86,14 @@ else
 	sed -i "s/IMG_NAME=.*/IMG_NAME=\"casanode-os\"/" "${PI_GEN_DIR}/config" || error_exit "Failed to set insecure mode in config."
 fi
 
+# If the "compression" parameter is passed with a value of "zip" or "gz" or "xz"
+if [[ -n "$COMPRESSION" ]]
+then
+	sed -i "s/DEPLOY_COMPRESSION=\"none\"/DEPLOY_COMPRESSION=\"$COMPRESSION\"/" "${PI_GEN_DIR}/config" || error_exit "Failed to set compression type in config."
+else
+	sed -i "s/DEPLOY_COMPRESSION=.*$/DEPLOY_COMPRESSION=\"none\"/" "${PI_GEN_DIR}/config" || error_exit "Failed to set compression type in config."
+fi
+
 # Skip stages to build a lite system
 for STAGE in stage3 stage4 stage5; do
 	touch "${PI_GEN_DIR}/${STAGE}/SKIP" || error_exit "Failed to create ${STAGE}/SKIP."
@@ -104,12 +120,35 @@ cd "${PI_GEN_DIR}/" || error_exit "Failed to change directory to ${PI_GEN_DIR}."
 CLEAN=1 bash build-docker.sh || error_exit "Failed to build the pi-gen image."
 
 # Check if the image was created successfully
-IMAGE_PATH=$(ls deploy/*.img | tail -n 1) || error_exit "Image creation failed or image not found."
+IMAGE_EXTENSIONS=("*.img" "*.zip" "*.xz" "*.gz")
+IMAGE_PATH=""
+
+# Find the image file
+for ext in "${IMAGE_EXTENSIONS[@]}"
+do
+	IMAGE_PATH=$(find deploy -type f -name "$ext" | head -n 1)
+	if [ -n "$IMAGE_PATH" ]; then
+		break
+	fi
+done
+
+# Check if the image was created successfully
 if [ -f "$IMAGE_PATH" ]; then
-	echo "Image created successfully: $IMAGE_PATH"
+	echo -e "\033[0;32mImage created successfully: $IMAGE_PATH\033[0m"
 else
 	error_exit "Image creation failed or image not found."
 fi
+
+# Create the ../deploy directory if it doesn't exist
+[ -d "../deploy" ] || mkdir -p ../deploy
+
+# Extract the base name and modify it
+BASE_NAME=$(basename "$IMAGE_PATH")
+NEW_NAME=$(echo "$BASE_NAME" | sed 's/^image_//' | sed 's/-lite//')
+
+# Move the image to the deploy directory
+mv "$IMAGE_PATH" "../deploy/$NEW_NAME" || error_exit "Failed to move image to deploy directory."
+echo -e "\e[32mBuild completed successfully, you can find the image in the deploy directory.\e[0m"
 
 # Remove the build container
 if [ "$(sudo docker ps -a -q -f name=pigen_work)" ]
@@ -117,17 +156,4 @@ then
 	sudo docker rm -v pigen_work || error_exit "Failed to remove the build container."
 else
 	echo "Container pigen_work does not exist."
-fi
-
-# Move deploy directory to casanode directory
-if [ -d "./deploy" ]
-then
-	# If the deploy directory already exists, remove it
-	[ -d "../deploy" ] && rm -rf ../deploy
-	# Move the deploy directory to the casanode directory
-	mv ./deploy/ "../" || error_exit "Failed to move deploy directory."
-	
-	echo -e "\e[32mBuild completed successfully, you can find the image in deploy directory.\e[0m"
-else
-	error_exit "Deploy directory not found, build failed."
 fi
