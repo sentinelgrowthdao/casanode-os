@@ -19,12 +19,26 @@ EOF
 
 # Git clone
 echo "Cloning repository..."
-git clone https://github.com/sentinelgrowthdao/casanode-ble "${ROOTFS_DIR}/opt/casanode/casanode-ble/"
+git clone https://github.com/sentinelgrowthdao/casanode-ble "${ROOTFS_DIR}/opt/casanode/sources/"
 
-# Install dependencies
-echo "Installing npm dependencies..."
+# Fetch specific commit hash
+git -C "${ROOTFS_DIR}/opt/casanode/sources/" fetch origin <commit-hash>
+
+# Check if the commit hash exists in the repository
+if git -C "${ROOTFS_DIR}/opt/casanode/sources/" rev-parse --verify "<commit-hash>" >/dev/null 2>&1; then
+	# Checkout the specified commit hash
+	git -C "${ROOTFS_DIR}/opt/casanode/sources/" checkout "<commit-hash>" || error_exit "Failed to checkout specified commit hash."
+fi
+
+# Move app directory
+mv "${ROOTFS_DIR}/opt/casanode/sources/app/" "${ROOTFS_DIR}/opt/casanode/app/"
+rm -rf "${ROOTFS_DIR}/opt/casanode/sources/"
+
+# Install dependencies and build
+echo "Install npm dependencies and build the application..."
 on_chroot << EOF
-npm install --prefix /opt/casanode/casanode-ble/app
+npm install --prefix /opt/casanode/app
+npm run build --prefix /opt/casanode/app
 EOF
 
 # Install casanode startup.sh

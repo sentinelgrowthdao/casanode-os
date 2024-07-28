@@ -4,7 +4,7 @@ After=network.target casanode-startup.service
 Requires=casanode-startup.service
 
 [Service]
-ExecStart=npm --prefix /opt/casanode/casanode-ble/app run dev
+ExecStart=npm --prefix /opt/casanode/app/ run start
 User=casanode
 Restart=on-failure
 

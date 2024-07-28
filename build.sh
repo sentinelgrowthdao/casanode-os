@@ -6,6 +6,12 @@ PI_GEN_DIR=./pi-gen
 CASANODE_DIR=./casanode
 IMAGE_PATH=""
 
+# Variables for parameters
+COMPRESSION=""
+INSECURE=""
+COMMIT_HASH="37f9ba6e3e8e6d12f5cdfc3335926d83abe9de38"
+
+
 # Function to log errors
 error_exit()
 {
@@ -59,6 +65,9 @@ touch "${PI_GEN_DIR}/stage5/SKIP_IMAGES" || error_exit "Failed to create stage5/
 rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/04-casanode/" || error_exit "Failed to copy casanode files."
 # Make the 00-run.sh script executable
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
+# Replace <commit-hash> inside 00-run.sh with the latest commit hash
+sed -i "s/<commit-hash>/${COMMIT_HASH}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace commit hash in 00-run.sh."
+
 
 # Build the pi-gen image
 cd "${PI_GEN_DIR}/" || error_exit "Failed to change directory to ${PI_GEN_DIR}."
