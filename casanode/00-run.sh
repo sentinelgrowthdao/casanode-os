@@ -43,8 +43,8 @@ EOF
 
 # Create casanode configuration
 echo "Creating casanode configuration..."
+install -m 644 files/casanode.conf "${ROOTFS_DIR}/etc/casanode.conf"
 on_chroot << EOF
-touch /etc/casanode.conf
 chown -R casanode: /etc/casanode.conf
 chmod 600 /etc/casanode.conf
 EOF
