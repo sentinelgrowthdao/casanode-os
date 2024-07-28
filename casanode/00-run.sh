@@ -35,7 +35,7 @@ chmod +x "${ROOTFS_DIR}/opt/casanode/startup.sh"
 # Create casanode user
 echo "Creating casanode user..."
 on_chroot << EOF
-adduser --disabled-password --gecos "" --home /opt/casanode casanode
+adduser --disabled-password --gecos "" --home /opt/casanode --uid 150 casanode
 chown -R casanode: /opt/casanode
 usermod -aG sudo,adm,docker casanode
 sed -i '/%sudo\s\+ALL=(ALL:ALL) ALL/a casanode ALL=(ALL) NOPASSWD:ALL' /etc/sudoers
