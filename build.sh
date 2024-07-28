@@ -11,6 +11,19 @@ COMPRESSION=""
 INSECURE=""
 COMMIT_HASH="37f9ba6e3e8e6d12f5cdfc3335926d83abe9de38"
 
+# Process script arguments
+while [[ "$#" -gt 0 ]]
+do
+	case "$1" in
+		--commit-hash=*)
+			COMMIT_HASH="${1#*=}"
+			shift
+			;;
+		*)
+			error_exit "Unknown parameter passed: $1"
+			;;
+	esac
+done
 
 # Function to log errors
 error_exit()
