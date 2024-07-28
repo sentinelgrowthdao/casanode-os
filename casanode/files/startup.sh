@@ -21,6 +21,10 @@ then
 	loginctl enable-linger casanode
 	echo "Linger enabled for casanode user." | tee -a "$LOGFILE"
 	
+	# Add subuid and subgid entries for casanode as required by Docker rootless mode
+	echo "casanode:100000:65536" >> /etc/subuid
+	echo "casanode:100000:65536" >> /etc/subgid
+	
 	# Install Docker rootless
 	echo "Installing Docker rootless..." | tee -a "$LOGFILE"
 	su -l "$USER" -c 'export XDG_RUNTIME_DIR=/run/user/$(id -u casanode) && \
