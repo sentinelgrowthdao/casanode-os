@@ -27,6 +27,14 @@ Once the dependencies are installed, you can proceed with creating the image.
 
 The image generation will take between one and two hours. Once the process is complete, the image will be available in the `pi-gen/deploy/` folder.
 
+### Optional Parameters
+
+You can customize the image generation process using the following optional parameters:
+
+- `compression`: Possible values are `zip`, `gz`, `xz`. This parameter allows you to generate a compressed image.
+- `commit-hash`: This parameter lets you specify the hash of the GitHub repository [https://github.com/sentinelgrowthdao/casanode-ble](https://github.com/sentinelgrowthdao/casanode-ble) to use during the build.
+- `insecure`: This parameter allows you to set a default value for Bluetooth connection and avoid the need to flash the QR code.
+
 ## Using the Image
 
 After generating the image, follow these steps to install it on your Raspberry Pi:
