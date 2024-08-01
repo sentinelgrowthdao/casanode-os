@@ -15,6 +15,25 @@ Before starting, ensure you have the following:
 	gpg pigz xxd arch-test
 	```
 
+### Additional OS Prerequisites
+
+- Support for 64-bit architecture.
+- Equipped with a Bluetooth antenna.
+- Has an Ethernet port or a Wi-Fi card.
+
+### Supported Devices
+
+This Casanode image supports the following Raspberry Pi models:
+
+- Raspberry Pi 3 Model B
+- Raspberry Pi 3 Model B+
+- Raspberry Pi 3 Model A+
+- Raspberry Pi 4 Model B
+- Raspberry Pi 400
+- Raspberry Pi 5
+
+We encourage you to test on other devices and provide feedback.
+
 ## Building the Image
 
 Once the dependencies are installed, you can proceed with creating the image.
