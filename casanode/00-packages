@@ -11,3 +11,5 @@ uidmap
 dbus-user-session
 fuse-overlayfs
 dbus-x11
+bluez-alsa-utils
+pulseaudio-module-bluetooth
