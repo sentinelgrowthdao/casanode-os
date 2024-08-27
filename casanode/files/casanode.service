@@ -6,7 +6,11 @@ Requires=casanode-startup.service
 [Service]
 ExecStart=npm --prefix /opt/casanode/app/ run start
 User=casanode
-Restart=on-failure
+Restart=always
+RestartSec=2s
+TimeoutStopSec=20s
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
