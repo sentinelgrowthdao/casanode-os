@@ -55,16 +55,6 @@ usermod -aG sudo,adm,docker casanode
 sed -i '/%sudo\s\+ALL=(ALL:ALL) ALL/a casanode ALL=(ALL) NOPASSWD:ALL' /etc/sudoers
 EOF
 
-# If the "insecure" parameter is passed to the build script
-if [ -f "bluetooth.insecure" ]
-then
-	echo "Setting the default BLE UUID..."
-	sed -i 's/BLE_UUID=.*$/BLE_UUID=0000180d-0000-1000-8000/' "files/casanode.conf"
-else
-	echo "Remove the default BLE UUID..."
-	sed -i 's/BLE_UUID=*/BLE_UUID=/' "files/casanode.conf"
-fi
-
 # Create casanode configuration
 echo "Creating casanode configuration..."
 install -m 644 files/casanode.conf "${ROOTFS_DIR}/etc/casanode.conf"

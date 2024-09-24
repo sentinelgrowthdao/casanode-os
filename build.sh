@@ -23,10 +23,6 @@ do
 			fi
 			shift
 			;;
-		--insecure)
-			INSECURE="insecure"
-			shift
-			;;
 		--commit-hash=*)
 			COMMIT_HASH="${1#*=}"
 			shift
@@ -78,14 +74,6 @@ fi
 # Copy the casanode configuration to the pi-gen configuration
 cp "${CASANODE_DIR}/config" "${PI_GEN_DIR}/config" || error_exit "Failed to copy config file."
 
-# If the "insecure" parameter is passed to the build script
-if [[ -n "$INSECURE" ]]
-then
-	sed -i "s/IMG_NAME=.*/IMG_NAME=\"casanode-os-insecure\"/" "${PI_GEN_DIR}/config" || error_exit "Failed to set insecure mode in config."
-else
-	sed -i "s/IMG_NAME=.*/IMG_NAME=\"casanode-os\"/" "${PI_GEN_DIR}/config" || error_exit "Failed to set insecure mode in config."
-fi
-
 # If the "compression" parameter is passed with a value of "zip" or "gz" or "xz"
 if [[ -n "$COMPRESSION" ]]
 then
@@ -108,12 +96,6 @@ rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 # Replace <commit-hash> inside 00-run.sh with the latest commit hash
 sed -i "s/<commit-hash>/${COMMIT_HASH}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace commit hash in 00-run.sh."
-
-# If the "insecure" parameter is passed to the build script
-if [[ -n "$INSECURE" ]]
-then
-	touch "${PI_GEN_DIR}/stage2/04-casanode/bluetooth.insecure" || error_exit "Failed to create bluetooth.insecure file."
-fi
 
 # Build the pi-gen image
 cd "${PI_GEN_DIR}/" || error_exit "Failed to change directory to ${PI_GEN_DIR}."
