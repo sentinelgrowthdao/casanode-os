@@ -55,6 +55,7 @@ then
 	ufw default allow outgoing | tee -a "$LOGFILE"
 	ufw allow ssh | tee -a "$LOGFILE"
 	ufw allow 8080 | tee -a "$LOGFILE"
+	ufw allow 8081 | tee -a "$LOGFILE"
 	ufw --force enable | tee -a "$LOGFILE"
 	echo "UFW rules configured." | tee -a "$LOGFILE"
 else
