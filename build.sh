@@ -8,7 +8,7 @@ IMAGE_PATH=""
 
 # Variables for parameters
 COMPRESSION=""
-COMMIT_HASH="99294b6311043b32559c78a467fecef89e109e43"
+COMMIT_HASH="4a224c50b4792653d69623e38c793457394261da"
 
 # Process script arguments
 while [[ "$#" -gt 0 ]]
