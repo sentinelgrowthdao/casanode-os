@@ -10,6 +10,12 @@ IMAGE_PATH=""
 COMPRESSION=""
 COMMIT_HASH="4a224c50b4792653d69623e38c793457394261da"
 
+# Load the .env file if it exists
+if [ -f .env ]
+then
+	source .env
+fi
+
 # Process script arguments
 while [[ "$#" -gt 0 ]]
 do
@@ -95,6 +101,12 @@ rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 # Replace <commit-hash> inside 00-run.sh with the latest commit hash
 sed -i "s/<commit-hash>/${COMMIT_HASH}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace commit hash in 00-run.sh."
+
+# If SENTRY_DSN is set in the environment
+if [ -n "${SENTRY_DSN}" ]
+then
+	sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" "${PI_GEN_DIR}/stage2/04-casanode/files/casanode.conf" || error_exit "Failed to set SENTRY_DSN in casanode.conf."
+fi
 
 # Build the pi-gen image
 cd "${PI_GEN_DIR}/" || error_exit "Failed to change directory to ${PI_GEN_DIR}."
