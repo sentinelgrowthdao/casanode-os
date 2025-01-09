@@ -8,7 +8,7 @@ IMAGE_PATH=""
 
 # Variables for parameters
 COMPRESSION=""
-COMMIT_HASH="4a224c50b4792653d69623e38c793457394261da"
+COMMIT_HASH="00affae309ed7973d40ef7f8ebdbfbe0fbd60049"
 
 # Load the .env file if it exists
 if [ -f .env ]
