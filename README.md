@@ -76,3 +76,7 @@ With this application, you can interact with your Casanode and finalize its conf
 ## Support and Troubleshooting
 
 For any questions or issues, please refer to the documentation or open an issue on the GitHub repository.
+
+## License
+
+This project is licensed under the GPL v3 License - see the LICENSE file for details.
