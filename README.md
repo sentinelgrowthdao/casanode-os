@@ -75,7 +75,21 @@ With this application, you can interact with your Casanode and finalize its conf
 
 ## Support and Troubleshooting
 
-For any questions or issues, please refer to the documentation or open an issue on the GitHub repository.
+For any questions or issues not covered in the documentation, please open an issue on the GitHub repository.
+
+### Note on Docker Rootless Mode
+
+If you encounter issues with pi-gen while Docker is in rootless mode, you can disable rootless mode and restart Docker in root mode:
+
+1. Disable rootless mode:
+	```bash
+	systemctl --user stop docker
+	```
+
+2. Restart Docker in root mode:
+	```bash
+	sudo systemctl restart docker
+	```
 
 ## License
 
