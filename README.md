@@ -51,7 +51,7 @@ The image generation will take between one and two hours. Once the process is co
 You can customize the image generation process using the following optional parameters:
 
 - `compression`: Possible values are `zip`, `gz`, `xz`. This parameter allows you to generate a compressed image.
-- `commit-hash`: This parameter lets you specify the hash of the GitHub repository [https://github.com/sentinelgrowthdao/casanode-ble](https://github.com/sentinelgrowthdao/casanode-ble) to use during the build.
+- `deb-version`: This parameter lets you specify the version of the Debian package available on the repository [https://sentinelgrowthdao.github.io/casanode-ble/](https://sentinelgrowthdao.github.io/casanode-ble/) to use during the build.
 
 ## Using the Image
 
