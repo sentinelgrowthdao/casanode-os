@@ -10,6 +10,12 @@ IMAGE_PATH=""
 COMPRESSION=""
 DEB_VERSION="1.0.0-alpha5"
 
+# Load the .env file if it exists
+if [ -f .env ]
+then
+	source .env
+fi
+
 # Process script arguments
 while [[ "$#" -gt 0 ]]
 do
