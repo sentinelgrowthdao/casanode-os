@@ -8,13 +8,7 @@ IMAGE_PATH=""
 
 # Variables for parameters
 COMPRESSION=""
-COMMIT_HASH="00affae309ed7973d40ef7f8ebdbfbe0fbd60049"
-
-# Load the .env file if it exists
-if [ -f .env ]
-then
-	source .env
-fi
+DEB_VERSION="1.0.0-alpha5"
 
 # Process script arguments
 while [[ "$#" -gt 0 ]]
@@ -28,8 +22,8 @@ do
 			fi
 			shift
 			;;
-		--commit-hash=*)
-			COMMIT_HASH="${1#*=}"
+		--deb-version=*)
+			DEB_VERSION="${1#*=}"
 			shift
 			;;
 		*)
@@ -99,8 +93,8 @@ touch "${PI_GEN_DIR}/stage5/SKIP_IMAGES" || error_exit "Failed to create stage5/
 rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/04-casanode/" || error_exit "Failed to copy casanode files."
 # Make the 00-run.sh script executable
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
-# Replace <commit-hash> inside 00-run.sh with the latest commit hash
-sed -i "s/<commit-hash>/${COMMIT_HASH}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace commit hash in 00-run.sh."
+# Replace <deb-version> inside 00-run.sh
+sed -i "s/<deb-version>/${DEB_VERSION}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace deb-version hash in 00-run.sh."
 
 # If SENTRY_DSN is set in the environment
 if [ -n "${SENTRY_DSN}" ]
