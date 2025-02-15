@@ -105,7 +105,7 @@ sed -i "s/<deb-version>/${DEB_VERSION}/" "${PI_GEN_DIR}/stage2/04-casanode/00-ru
 # If SENTRY_DSN is set in the environment
 if [ -n "${SENTRY_DSN}" ]
 then
-	sed -i 's|^SENTRY_DSN=".*"$|SENTRY_DSN="${SENTRY_DSN}"|' "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to set SENTRY_DSN in 00-run.sh."
+	sed -i "s|^SENTRY_DSN=\".*\"$|SENTRY_DSN=\"${SENTRY_DSN}\"|" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to set SENTRY_DSN in 00-run.sh."
 fi
 
 # Build the pi-gen image
