@@ -2,6 +2,10 @@
 
 echo "Starting casanode configuration..."
 
+# Set environment variables
+SENTRY_DSN=""
+export SENTRY_DSN
+
 # Install Docker
 on_chroot << EOF
 set -o pipefail
@@ -23,6 +27,7 @@ on_chroot << EOF
 echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ble/ stable main" > /etc/apt/sources.list.d/casanode.list
 apt-get update
 apt-get install -y casanode=<deb-version>
+sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" /etc/casanode.conf || echo "Failed to set SENTRY_DSN in casanode.conf."
 EOF
 
 # Create logrotate configuration
