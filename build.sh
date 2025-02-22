@@ -8,7 +8,7 @@ IMAGE_PATH=""
 
 # Variables for parameters
 COMPRESSION=""
-DEB_VERSION="1.0.0-alpha6"
+DEB_VERSION="1.0.0-alpha6.1"
 
 # Load the .env file if it exists
 if [ -f .env ]
