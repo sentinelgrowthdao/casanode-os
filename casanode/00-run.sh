@@ -21,6 +21,13 @@ apt-get update
 apt-get install -y nodejs
 EOF
 
+# Enable Bluetooth experimental mode
+echo "Enabling experimental mode for Bluetooth..."
+on_chroot << EOF
+	sed -i 's|ExecStart=/usr/libexec/bluetooth/bluetoothd|ExecStart=/usr/libexec/bluetooth/bluetoothd --experimental|' /lib/systemd/system/bluetooth.service
+	systemctl daemon-reload
+EOF
+
 # Install casanode
 echo "Installing casanode..."
 on_chroot << EOF
