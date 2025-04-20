@@ -3,7 +3,7 @@
 echo "Starting casanode configuration..."
 
 # Set environment variables
-SENTRY_DSN=""
+SENTRY_DSN="<sentry-dsn>"
 export SENTRY_DSN
 
 # Install Docker

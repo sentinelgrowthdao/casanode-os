@@ -8,7 +8,8 @@ IMAGE_PATH=""
 
 # Variables for parameters
 COMPRESSION=""
-DEB_VERSION="1.0.0-alpha6.1"
+DEB_VERSION=""
+SENTRY_DSN=""
 
 # Load the .env file if it exists
 if [ -f .env ]
@@ -30,6 +31,10 @@ do
 			;;
 		--deb-version=*)
 			DEB_VERSION="${1#*=}"
+			shift
+			;;
+		--sentry-dsn=*)
+			SENTRY_DSN="${1#*=}"
 			shift
 			;;
 		*)
@@ -101,6 +106,8 @@ rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 # Replace <deb-version> inside 00-run.sh
 sed -i "s/<deb-version>/${DEB_VERSION}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace deb-version hash in 00-run.sh."
+# Replace <sentry-dsn> inside 00-run.sh
+sed -i "s|<sentry-dsn>|${SENTRY_DSN}|" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace sentry-dsn hash in 00-run.sh."
 
 # If SENTRY_DSN is set in the environment
 if [ -n "${SENTRY_DSN}" ]
