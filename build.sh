@@ -81,6 +81,12 @@ fi
 # Check if the configuration file exists
 [ -f "${CASANODE_DIR}/config" ] || error_exit "Casanode config file not found."
 
+
+# Check that the Casanode version is properly defined
+if [[ -z "${DEB_VERSION}" ]]; then
+	error_exit "The --deb-version parameter is required to specify the Casanode version."
+fi
+
 # Copy the casanode configuration to the pi-gen configuration
 cp "${CASANODE_DIR}/config" "${PI_GEN_DIR}/config" || error_exit "Failed to copy config file."
 
