@@ -11,8 +11,6 @@ uidmap
 dbus-user-session
 fuse-overlayfs
 dbus-x11
-bluez-alsa-utils
-pulseaudio-module-bluetooth
 python3-dotenv
 python3-dbus
 python3-psutil
@@ -23,5 +21,3 @@ python3-gi-cairo
 libcairo2-dev
 libgirepository1.0-dev
 libdbus-1-dev
-libbluetooth-dev
-bluez
