@@ -10,6 +10,7 @@ IMAGE_PATH=""
 COMPRESSION=""
 DEB_VERSION=""
 SENTRY_DSN=""
+DEVICE_JSON=""
 
 # Load the .env file if it exists
 if [ -f .env ]
@@ -35,6 +36,10 @@ do
 			;;
 		--sentry-dsn=*)
 			SENTRY_DSN="${1#*=}"
+			shift
+			;;
+		--device-json=*)
+			DEVICE_JSON="${1#*=}"
 			shift
 			;;
 		*)
@@ -108,6 +113,10 @@ touch "${PI_GEN_DIR}/stage5/SKIP_IMAGES" || error_exit "Failed to create stage5/
 
 # Add Casanode installation files to pi-gen
 rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/04-casanode/" || error_exit "Failed to copy casanode files."
+if [[ -n "$DEVICE_JSON" ]]; then
+	mkdir -p "${PI_GEN_DIR}/stage2/04-casanode/files"
+	cp "$DEVICE_JSON" "${PI_GEN_DIR}/stage2/04-casanode/files/device.json" || error_exit "Failed to copy device.json."
+fi
 # Make the 00-run.sh script executable
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 # Replace <deb-version> inside 00-run.sh

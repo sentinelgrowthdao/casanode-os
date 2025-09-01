@@ -1,0 +1,12 @@
+[Unit]
+Description=Configure AP credentials on first boot
+Before=hostapd.service dnsmasq.service
+ConditionPathExists=/boot/casanode/device.json
+ConditionPathExists=!/etc/casanode_ap_configured
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/casanode-firstboot.py
+
+[Install]
+WantedBy=multi-user.target
