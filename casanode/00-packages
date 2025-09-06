@@ -23,3 +23,6 @@ libgirepository1.0-dev
 libdbus-1-dev
 hostapd
 dnsmasq
+iw
+rfkill
+dhcpcd5
