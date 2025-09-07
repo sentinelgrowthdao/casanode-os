@@ -1,0 +1,12 @@
+[Unit]
+Description=Unblock Wi-Fi (rfkill), set regdom, bring wlan0 up
+DefaultDependencies=no
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/casanode-unblock-wifi.sh
+
+[Install]
+WantedBy=multi-user.target

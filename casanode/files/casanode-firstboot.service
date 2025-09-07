@@ -1,7 +1,7 @@
 [Unit]
 Description=Configure AP credentials on first boot
 Before=hostapd.service dnsmasq.service
-After=local-fs.target
+After=local-fs.target casanode-unblock-wifi.service
 ConditionPathExists=!/etc/casanode_ap_configured
 
 [Service]

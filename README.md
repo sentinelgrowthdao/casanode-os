@@ -67,6 +67,11 @@ After generating the image, follow these steps to install it on your Raspberry P
 
 After a few minutes, your Casanode will be ready to use.
 
+### Wi-Fi Access Point
+
+To avoid Wi-Fi being blocked by `rfkill`, provide a two-letter country code in the `device.json` file located on the boot
+partition. An example configuration is available in `device.json.example`.
+
 ## Configuring Casanode
 
 To connect to Casanode, use the Android application available in this repository: [casanode-mobile-app](https://github.com/sentinelgrowthdao/casanode-mobile-app).
