@@ -93,11 +93,19 @@ install -d "${ROOTFS_DIR}/etc/systemd/system/hostapd.service.d"
 install -m 644 files/hostapd.service.d-override.conf "${ROOTFS_DIR}/etc/systemd/system/hostapd.service.d/override.conf"
 install -m 755 files/casanode-firstboot.py "${ROOTFS_DIR}/usr/local/bin/casanode-firstboot.py"
 install -m 644 files/casanode-firstboot.service "${ROOTFS_DIR}/etc/systemd/system/casanode-firstboot.service"
-echo 'net.ipv4.ip_forward=0' > "${ROOTFS_DIR}/etc/sysctl.d/99-casanode.conf"
+echo 'net.ipv4.ip_forward=1' > "${ROOTFS_DIR}/etc/sysctl.d/99-casanode.conf"
+
+# dnsmasq startup ordering: wait for Wi-Fi unblock
+install -d "${ROOTFS_DIR}/etc/systemd/system/dnsmasq.service.d"
+install -m 644 files/dnsmasq.service.d-override.conf "${ROOTFS_DIR}/etc/systemd/system/dnsmasq.service.d/override.conf"
 
 # Add rfkill unblock oneshot to clear persistent rfkill state and set regdom early
 install -m 755 files/casanode-unblock-wifi.sh "${ROOTFS_DIR}/usr/local/sbin/casanode-unblock-wifi.sh"
 install -m 644 files/casanode-unblock-wifi.service "${ROOTFS_DIR}/etc/systemd/system/casanode-unblock-wifi.service"
+
+# Install firewall configuration
+install -m 755 files/casanode-firewall.sh "${ROOTFS_DIR}/usr/local/sbin/casanode-firewall.sh"
+install -m 644 files/casanode-firewall.service "${ROOTFS_DIR}/etc/systemd/system/casanode-firewall.service"
 
 on_chroot <<'EOF'
 systemctl unmask hostapd
@@ -105,6 +113,7 @@ systemctl enable hostapd
 systemctl enable dnsmasq
 systemctl enable casanode-firstboot.service
 systemctl enable casanode-unblock-wifi.service
+systemctl enable casanode-firewall.service
 systemctl disable avahi-daemon || true
 EOF
 

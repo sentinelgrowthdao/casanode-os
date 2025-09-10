@@ -1,0 +1,11 @@
+[Unit]
+Description=Configure Casanode firewall
+After=casanode-unblock-wifi.service dhcpcd.service systemd-sysctl.service
+Wants=casanode-unblock-wifi.service dhcpcd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/casanode-firewall.sh
+
+[Install]
+WantedBy=multi-user.target

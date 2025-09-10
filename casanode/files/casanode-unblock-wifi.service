@@ -1,8 +1,8 @@
 [Unit]
 Description=Unblock Wi-Fi (rfkill), set regdom, bring wlan0 up
-DefaultDependencies=no
+After=sys-subsystem-net-devices-wlan0.device
+Wants=sys-subsystem-net-devices-wlan0.device network-pre.target
 Before=network-pre.target
-Wants=network-pre.target
 
 [Service]
 Type=oneshot
