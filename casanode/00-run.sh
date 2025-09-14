@@ -35,6 +35,16 @@ apt-get install -y casanode=<deb-version>
 sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" /etc/casanode.conf || echo "Failed to set SENTRY_DSN in casanode.conf."
 EOF
 
+# Configure nginx site for casanode and include fragment directory
+echo "Configuring nginx for casanode..."
+install -m 644 files/casanode-nginx.conf "${ROOTFS_DIR}/etc/nginx/sites-available/casanode"
+ln -sf /etc/nginx/sites-available/casanode "${ROOTFS_DIR}/etc/nginx/sites-enabled/casanode"
+mkdir -p "${ROOTFS_DIR}/opt/casanode/nginx"
+on_chroot <<'EOF'
+systemctl enable nginx
+nginx -t || (journalctl -u nginx --no-pager | tail -n 100; exit 1)
+EOF
+
 # Network stack prep for AP mode (remove conflicts, ensure dhcpcd)
 echo "Preparing network stack for AP..."
 on_chroot << 'EOF'

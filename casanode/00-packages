@@ -26,3 +26,4 @@ dnsmasq
 iw
 rfkill
 dhcpcd5
+nginx
