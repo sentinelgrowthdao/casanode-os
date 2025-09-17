@@ -26,12 +26,13 @@ apt-get update
 apt-get install -y nodejs
 EOF
 
-# Install casanode
-echo "Installing casanode..."
+# Install casanode-api & casanode-ui
+echo "Installing casanode-api & casanode-ui (version <deb-version>)..."
 on_chroot << EOF
-echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ble/ stable main" > /etc/apt/sources.list.d/casanode.list
+echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ble/ stable main" > /etc/apt/sources.list.d/casanode-ble.list
+echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-mobile-app/ stable main" > /etc/apt/sources.list.d/casanode-mobile-app.list
 apt-get update
-apt-get install -y casanode=<deb-version>
+apt-get install -y casanode-api=<deb-version> casanode-ui=<deb-version>
 sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" /etc/casanode.conf || echo "Failed to set SENTRY_DSN in casanode.conf."
 EOF
 
@@ -75,7 +76,7 @@ install -m 644 files/logrotate "${ROOTFS_DIR}/etc/logrotate.d/casanode"
 echo "Configuring access point..."
 mkdir -p "${ROOTFS_DIR}/boot/firmware/casanode"
 if [ -f files/device.json ]; then
-    install -m 600 files/device.json "${ROOTFS_DIR}/boot/firmware/casanode/device.json"
+  install -m 600 files/device.json "${ROOTFS_DIR}/boot/firmware/casanode/device.json"
 fi
 
 # Add wlan0 static IP stanza if not present
@@ -83,8 +84,8 @@ if ! grep -qE '^interface[[:space:]]+wlan0(\b|$)' "${ROOTFS_DIR}/etc/dhcpcd.conf
 cat <<'EOT' >> "${ROOTFS_DIR}/etc/dhcpcd.conf"
 
 interface wlan0
-    static ip_address=192.168.50.1/24
-    nohook wpa_supplicant
+  static ip_address=192.168.50.1/24
+  nohook wpa_supplicant
 EOT
 fi
 
