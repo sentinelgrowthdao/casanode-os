@@ -120,7 +120,7 @@ fi
 # Make the 00-run.sh script executable
 chmod +x "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to make 00-run.sh executable."
 # Replace <deb-version> inside 00-run.sh
-sed -i "s/<deb-version>/${DEB_VERSION}/" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace deb-version hash in 00-run.sh."
+sed -i "s/<deb-version>/${DEB_VERSION}/g" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace deb-version hash in 00-run.sh."
 # Replace <sentry-dsn> inside 00-run.sh
 sed -i "s|<sentry-dsn>|${SENTRY_DSN}|" "${PI_GEN_DIR}/stage2/04-casanode/00-run.sh" || error_exit "Failed to replace sentry-dsn hash in 00-run.sh."
 
