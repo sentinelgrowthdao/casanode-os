@@ -123,14 +123,9 @@ rsn_pairwise=CCMP
 
 pathlib.Path(FLAG_FILE).touch()
 try:
-    # If we updated hostapd.conf, restart services to pick up new SSID, then reboot to apply WiFi config cleanly
+    # If we updated hostapd.conf, restart services to pick up new SSID
     if ssid_from_json or password_from_json:
         subprocess.run(["systemctl", "restart", "hostapd"], check=False)
         subprocess.run(["systemctl", "restart", "dnsmasq"], check=False)
-        # Important: reboot to ensure all WiFi config is applied (network stack, regdom, etc)
-        try:
-            subprocess.run(["reboot"], check=False)
-        except Exception:
-            pass
 except Exception:
     pass
