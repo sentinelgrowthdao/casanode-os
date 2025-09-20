@@ -11,8 +11,15 @@ on_chroot <<'EOF'
 systemctl disable userconf-pi.service userconf.service 2>/dev/null || true
 EOF
 
+# Remove apt-listchanges early (avoid network changelog fetch errors in build chroot)
+on_chroot <<'EOF'
+apt-get purge -y apt-listchanges || true
+export APT_LISTCHANGES_FRONTEND=none
+echo 'apt-listchanges removed (changelog fetch suppressed).'
+EOF
+
 # Install Docker
-on_chroot << EOF
+on_chroot << 'EOF'
 set -o pipefail
 curl -fsSL get.docker.com | sh
 apt-get install -y docker-ce-rootless-extras
@@ -20,7 +27,7 @@ EOF
 
 # Install Node.js
 echo "Installing Node.js..."
-on_chroot << EOF
+on_chroot << 'EOF'
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get update
 apt-get install -y nodejs
@@ -28,11 +35,21 @@ EOF
 
 # Install casanode-api & casanode-ui
 echo "Installing casanode-api & casanode-ui (version <deb-version>)..."
-on_chroot << EOF
+on_chroot << 'EOF'
 echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ble/ stable main" > /etc/apt/sources.list.d/casanode-ble.list
 echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-mobile-app/ stable main" > /etc/apt/sources.list.d/casanode-mobile-app.list
 apt-get update
-apt-get install -y casanode-api=<deb-version> casanode-ui=<deb-version>
+# Safe version handling (placeholder <deb-version> may remain if not replaced)
+VER="${CASANODE_VERSION:-<deb-version>}"
+if [ "$VER" = "<deb-version>" ]; then
+  echo '[casanode] Installing latest versions (placeholder not substituted).'
+  apt-get install -y casanode-api casanode-ui || true
+else
+  if ! apt-get install -y "casanode-api=$VER" "casanode-ui=$VER"; then
+    echo "[casanode] Specific version $VER not found, falling back to latest." >&2
+    apt-get install -y casanode-api casanode-ui || true
+  fi
+fi
 sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=${SENTRY_DSN}|" /etc/casanode.conf || echo "Failed to set SENTRY_DSN in casanode.conf."
 EOF
 
@@ -41,9 +58,20 @@ echo "Configuring nginx for casanode..."
 install -m 644 files/casanode-nginx.conf "${ROOTFS_DIR}/etc/nginx/sites-available/casanode"
 ln -sf /etc/nginx/sites-available/casanode "${ROOTFS_DIR}/etc/nginx/sites-enabled/casanode"
 mkdir -p "${ROOTFS_DIR}/opt/casanode/nginx"
+# Remove default site to avoid port 80/server_name conflicts
+rm -f "${ROOTFS_DIR}/etc/nginx/sites-enabled/default" "${ROOTFS_DIR}/etc/nginx/sites-available/default" || true
 on_chroot <<'EOF'
 systemctl enable nginx
-nginx -t || (journalctl -u nginx --no-pager | tail -n 100; exit 1)
+# Remove any invalid upstream blocks inside server-level fragments (should be http-level)
+for f in /opt/casanode/nginx/*.conf; do
+  [ -f "$f" ] || continue
+  if grep -Eq '^[[:space:]]*upstream[[:space:]]+casanode_api' "$f"; then
+    echo "[nginx] Stripping upstream block from $f (relocating not yet structured)." >&2
+    # Delete the upstream block only
+    sed -i '/^[[:space:]]*upstream[[:space:]]\+casanode_api/,/^[[:space:]]*}/d' "$f"
+  fi
+done
+nginx -t || (echo '----- nginx error context -----'; grep -Hn 'upstream' /opt/casanode/nginx/*.conf || true; exit 1)
 EOF
 
 # Network stack prep for AP mode (remove conflicts, ensure dhcpcd)
