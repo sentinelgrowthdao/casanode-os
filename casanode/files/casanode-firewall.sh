@@ -16,7 +16,7 @@ iptables -A FORWARD -i eth0 -o wlan0 -m conntrack --ctstate ESTABLISHED,RELATED 
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 # Optionally allow SSH on eth0 if marker file exists
-if [ -f /boot/enable-ssh-eth0 ]; then
+if [ -f /boot/enable-ssh-eth0 ] || [ -f /boot/firmware/enable-ssh-eth0 ] || [ "${CASANODE_ALLOW_ETH0_SSH:-0}" = "1" ]; then
     iptables -A INPUT -i eth0 -p tcp --dport 22 -j ACCEPT
 fi
 
