@@ -93,6 +93,7 @@ ssid_from_json = data.get("ssid") if isinstance(data, dict) else None
 password_from_json = data.get("password") if isinstance(data, dict) else None
 
 # Only rewrite hostapd.conf if SSID or password was provided in device.json.
+updated = False
 if ssid_from_json or password_from_json:
     ssid = ssid_from_json or default_ssid
     password = password_from_json or default_password
@@ -109,9 +110,7 @@ wpa_passphrase={password}
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 """
-
     if wifi_country:
-        # Set regulatory domain for AP explicitly to match system setting
         hostapd_conf += f"country_code={wifi_country}\n"
         hostapd_conf += "ieee80211d=1\n"
 
@@ -121,11 +120,25 @@ rsn_pairwise=CCMP
     with open("/etc/default/hostapd", "w", encoding="utf-8") as f:
         f.write('DAEMON_CONF="/etc/hostapd/hostapd.conf"\n')
 
-pathlib.Path(FLAG_FILE).touch()
+    updated = True  # we actually changed hostapd config
+
+def _svc_active(name: str) -> bool:
+    return subprocess.run(["systemctl", "is-active", "--quiet", name]).returncode == 0
+
 try:
-    # If we updated hostapd.conf, restart services to pick up new SSID
-    if ssid_from_json or password_from_json:
-        subprocess.run(["systemctl", "restart", "hostapd"], check=False)
-        subprocess.run(["systemctl", "restart", "dnsmasq"], check=False)
+    # Restart if config changed OR hostapd isn't running yet (first boot)
+    need_restart = updated or (not _svc_active("hostapd"))
+    if need_restart:
+        subprocess.run(["systemctl", "try-reload-or-restart", "dnsmasq"], check=False)
+        subprocess.run(["systemctl", "try-reload-or-restart", "hostapd"], check=False)
+    # Create the flag only at the very end, after attempting restarts
+    pathlib.Path(FLAG_FILE).touch()
 except Exception:
     pass
+
+# # Reboot to ensure all changes take effect (Wi‑Fi country, hostapd, etc)
+# try:
+#     subprocess.run(["sync"])
+#     subprocess.run(["reboot"], check=False)
+# except Exception:
+#     pass

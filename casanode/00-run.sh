@@ -94,7 +94,7 @@ EOF
 # Radio country/regulatory domain defaults (US) and wpa_supplicant base
 echo "Setting Wi-Fi regdom (US) and base wpa_supplicant.conf..."
 install -d "${ROOTFS_DIR}/etc/modprobe.d" "${ROOTFS_DIR}/etc/wpa_supplicant"
-install -m 644 files/cfg80211.conf "${ROOTFS_DIR}/etc/modprobe.d/cfg80211.conf"
+# install -m 644 files/cfg80211.conf "${ROOTFS_DIR}/etc/modprobe.d/cfg80211.conf"
 install -m 600 files/wpa_supplicant.conf "${ROOTFS_DIR}/etc/wpa_supplicant/wpa_supplicant.conf"
 
 # Create logrotate configuration
