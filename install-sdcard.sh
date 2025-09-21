@@ -3,22 +3,60 @@
 set -euo pipefail
 
 # Installation script for the Casanode image on an SD card with Wi-Fi configuration
-# Usage: ./install-sdcard.sh <image-file> <sd-card-device> [COUNTRY]
-# Example: sudo ./install-sdcard.sh deploy/2025-09-07-casanode-os.img /dev/sda FR
+# Usage: ./install-sdcard.sh <image-file> <sd-card-device> [COUNTRY] [SSID] [PASS]
+#   COUNTRY: 2-letter code (default FR)
+#   SSID: optional override for AP SSID (default Casanode-alpha1)
+#   PASS: optional WPA2 passphrase (8-63 chars). If omitted, prompted.
+# Example: sudo ./install-sdcard.sh deploy/2025-09-07-casanode-os.img /dev/sda FR MySSID MyStrongPass123
 
 # Default values (used if not provided)
 DEFAULT_IMG=""
 DEFAULT_COUNTRY="FR"
+DEFAULT_SSID="Casanode-alpha1"
+DEFAULT_PASS="casanode@alpha1"
+DEFAULT_AUTH_TOKEN="422f069c-4a48-4499-872d-30f365320d76"
 
+
+# AUTH_TOKEN en 6e argument ou prompt si absent
 if [ "$#" -lt 2 ]; then
-  echo "Usage: $0 <image-file> <sd-card-device> [COUNTRY]" >&2
-  echo "(Default image: $DEFAULT_IMG, country: $DEFAULT_COUNTRY)" >&2
+  echo "Usage: $0 <image-file> <sd-card-device> [COUNTRY] [SSID] [PASS] [AUTH_TOKEN]" >&2
+  echo "(Defaults: country=$DEFAULT_COUNTRY, ssid=$DEFAULT_SSID, pass=$DEFAULT_PASS, auth_token=$DEFAULT_AUTH_TOKEN)" >&2
   exit 1
 fi
+
 
 IMG="$1"
 DEV="$2"
 COUNTRY="${3:-$DEFAULT_COUNTRY}"
+SSID="${4:-$DEFAULT_SSID}"
+PASS="${5:-}" # if empty we'll prompt (but we still have a default available)
+AUTH_TOKEN="${6:-}"
+
+if [ -z "$AUTH_TOKEN" ]; then
+  read -rsp "Enter API AUTH_TOKEN (leave empty to use default): " ENTERED_AUTH
+  echo
+  if [ -n "$ENTERED_AUTH" ]; then
+    AUTH_TOKEN="$ENTERED_AUTH"
+  else
+    AUTH_TOKEN="$DEFAULT_AUTH_TOKEN"
+  fi
+fi
+
+if [ -z "$PASS" ]; then
+  read -rsp "Enter Wi-Fi passphrase (8-63 chars, leave empty to use default): " ENTERED
+  echo
+  if [ -n "$ENTERED" ]; then
+    PASS="$ENTERED"
+  else
+    PASS="$DEFAULT_PASS"
+  fi
+fi
+
+LEN=${#PASS}
+if [ $LEN -lt 8 ] || [ $LEN -gt 63 ]; then
+  echo "Error: Wi-Fi passphrase length must be 8-63 characters (got $LEN)." >&2
+  exit 1
+fi
 
 if [ ! -f "$IMG" ]; then
   echo "Image not found: $IMG" >&2
@@ -58,8 +96,8 @@ sudo mount "$PART2" /mnt/sdcard/root
 sudo mkdir -p /mnt/sdcard/boot/casanode
 cat <<EOF | sudo tee /mnt/sdcard/boot/casanode/device.json >/dev/null
 {
-  "ssid": "Casanode-1234",
-  "password": "MySecurePass123",
+  "ssid": "${SSID}",
+  "password": "${PASS}",
   "country": "${COUNTRY}"
 }
 EOF
@@ -91,11 +129,26 @@ echo "country=${COUNTRY}" | sudo tee -a /mnt/sdcard/root/etc/wpa_supplicant/wpa_
 if [ -f /mnt/sdcard/root/etc/hostapd/hostapd.conf ]; then
   sudo sed -i "s/^country_code=.*/country_code=${COUNTRY}/" /mnt/sdcard/root/etc/hostapd/hostapd.conf || true
   sudo bash -c "grep -q '^country_code=' /mnt/sdcard/root/etc/hostapd/hostapd.conf || echo 'country_code=${COUNTRY}' >> /mnt/sdcard/root/etc/hostapd/hostapd.conf"
+  # Ensure SSID & passphrase reflect provided values
+  sudo sed -i "s/^ssid=.*/ssid=${SSID//\//\/}/" /mnt/sdcard/root/etc/hostapd/hostapd.conf || true
+  sudo sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${PASS//\//\/}/" /mnt/sdcard/root/etc/hostapd/hostapd.conf || true
 fi
 
 # 5) RootFS: unblock script (ensures early regulatory domain)
 if [ -f /mnt/sdcard/root/usr/local/sbin/casanode-unblock-wifi.sh ]; then
   sudo sed -i "s/^COUNTRY=.*/COUNTRY=\"${COUNTRY}\"/" /mnt/sdcard/root/usr/local/sbin/casanode-unblock-wifi.sh || true
+fi
+
+# 6) Configure AUTH_TOKEN into /etc/casanode.conf
+CONF_FILE="/mnt/sdcard/root/etc/casanode.conf"
+if [ -f "$CONF_FILE" ]; then
+  if grep -q '^API_AUTH=' "$CONF_FILE"; then
+    sudo sed -i "s|^API_AUTH=.*$|API_AUTH=$AUTH_TOKEN|" "$CONF_FILE"
+  else
+    echo "API_AUTH=$AUTH_TOKEN" | sudo tee -a "$CONF_FILE" >/dev/null
+  fi
+else
+  echo "API_AUTH=$AUTH_TOKEN" | sudo tee "$CONF_FILE" >/dev/null
 fi
 
 # Flush and unmount
