@@ -96,6 +96,48 @@ If you encounter issues with pi-gen while Docker is in rootless mode, you can di
 	sudo systemctl restart docker
 	```
 
+## Quick Wi-Fi / SSH configuration helpers
+
+Two helper scripts let you patch an existing image or an SD card without rebuilding:
+
+### install-sdcard.sh
+
+Usage:
+```
+sudo ./install-sdcard.sh <image-file> <sd-card-device> [COUNTRY] [SSID] [PASS]
+```
+Parameters:
+- COUNTRY: 2-letter ISO code (default FR)
+- SSID: Access Point SSID (default Casanode-alpha1)
+- PASS: WPA2 passphrase (8–63 chars). If omitted you'll be prompted (default fallback stored internally).
+
+Features:
+- Validates passphrase length.
+- Writes boot/casanode/device.json consumed by first-boot logic.
+- Optionally creates /boot/enable-ssh-eth0 to allow SSH on ethernet (firewall controlled).
+- Updates hostapd.conf (if already present) to reflect SSID/PASS so first boot immediately matches config.
+
+### create-img.sh
+
+Usage:
+```
+sudo ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS]
+```
+Patches the image file directly (loop‑mount) with the same Wi‑Fi + country data, enforcing passphrase length.
+
+### Firewall behavior
+
+`casanode-firewall.sh`:
+- Accepts all traffic on wlan0 (explicit extra ACCEPT for tcp/80 for clarity).
+- On eth0, SSH (tcp/22) allowed only if one of:
+	* /boot/enable-ssh-eth0 exists
+	* /boot/firmware/enable-ssh-eth0 exists
+	* Environment variable CASANODE_ALLOW_ETH0_SSH=1 when the firewall script runs
+- Then everything else on eth0 is dropped.
+
+### Security note
+Change the default Wi‑Fi passphrase before distributing devices. Consider adding a random generator pipeline later.
+
 ## License
 
 This project is licensed under the GPL v3 License - see the LICENSE file for details.
