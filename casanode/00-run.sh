@@ -107,6 +107,16 @@ if [ -f files/device.json ]; then
   install -m 600 files/device.json "${ROOTFS_DIR}/boot/firmware/casanode/device.json"
 fi
 
+# Include Sentinel docker image tarball harvested at build time if available
+install -d "${ROOTFS_DIR}/opt/casanode/docker"
+SENTINEL_TAR_SRC="files/docker/sentinel-aarch64-alpine-v0.7.1.tar"
+SENTINEL_TAR_DST="${ROOTFS_DIR}/opt/casanode/docker/sentinel-aarch64-alpine-v0.7.1.tar"
+if [ -f "${SENTINEL_TAR_SRC}" ]; then
+  install -m 644 "${SENTINEL_TAR_SRC}" "${SENTINEL_TAR_DST}"
+else
+  echo "[build] Sentinel docker image tarball not found at ${SENTINEL_TAR_SRC}; skipping copy."
+fi
+
 # Add wlan0 static IP stanza if not present
 if ! grep -qE '^interface[[:space:]]+wlan0(\b|$)' "${ROOTFS_DIR}/etc/dhcpcd.conf" 2>/dev/null; then
 cat <<'EOT' >> "${ROOTFS_DIR}/etc/dhcpcd.conf"

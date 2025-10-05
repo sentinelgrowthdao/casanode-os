@@ -4,6 +4,8 @@ set -euo pipefail
 
 PI_GEN_DIR=./pi-gen
 CASANODE_DIR=./casanode
+SENTINEL_IMAGE="wajatmaka/sentinel-aarch64-alpine:v0.7.1"
+SENTINEL_TAR_PATH="${CASANODE_DIR}/files/docker/sentinel-aarch64-alpine-v0.7.1.tar"
 IMAGE_PATH=""
 
 # Variables for parameters
@@ -62,6 +64,36 @@ initialize_pi_gen_submodule()
 	git submodule update || error_exit "Failed to update submodule."
 }
 
+prepare_sentinel_image_tar()
+{
+	mkdir -p "$(dirname "${SENTINEL_TAR_PATH}")"
+
+	if ! command -v docker >/dev/null 2>&1; then
+		echo "[build] Docker not available on host; skipping Sentinel image packaging."
+		rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
+		return 0
+	fi
+
+	if ! docker image inspect "${SENTINEL_IMAGE}" >/dev/null 2>&1; then
+		echo "[build] Pulling ${SENTINEL_IMAGE}..."
+		if ! docker pull "${SENTINEL_IMAGE}"; then
+			echo "[build] Failed to pull ${SENTINEL_IMAGE}; skipping Sentinel image packaging." >&2
+			rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
+			return 0
+		fi
+	fi
+
+	tmp_tar="${SENTINEL_TAR_PATH}.tmp"
+	if docker save -o "${tmp_tar}" "${SENTINEL_IMAGE}"; then
+		mv "${tmp_tar}" "${SENTINEL_TAR_PATH}"
+		echo "[build] Saved ${SENTINEL_IMAGE} to ${SENTINEL_TAR_PATH}"
+	else
+		echo "[build] Failed to save ${SENTINEL_IMAGE} to ${SENTINEL_TAR_PATH}" >&2
+		rm -f "${tmp_tar}" >/dev/null 2>&1 || true
+		rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
+	fi
+}
+
 # Check if required directories exist
 [ -d "${CASANODE_DIR}" ] || error_exit "Casanode directory not found."
 
@@ -110,6 +142,9 @@ done
 
 touch "${PI_GEN_DIR}/stage4/SKIP_IMAGES" || error_exit "Failed to create stage4/SKIP_IMAGES."
 touch "${PI_GEN_DIR}/stage5/SKIP_IMAGES" || error_exit "Failed to create stage5/SKIP_IMAGES."
+
+# Ensure Sentinel docker image tarball is prepared before syncing Casanode files
+prepare_sentinel_image_tar
 
 # Add Casanode installation files to pi-gen
 rsync -avg --delete --exclude="config" "${CASANODE_DIR}/" "${PI_GEN_DIR}/stage2/04-casanode/" || error_exit "Failed to copy casanode files."
