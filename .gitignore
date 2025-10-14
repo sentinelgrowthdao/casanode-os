@@ -1,5 +1,7 @@
+__pycache__/
 deploy/
 casanode/files/docker/
+sdcard/
 .env
 
 ######################

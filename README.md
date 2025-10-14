@@ -98,24 +98,22 @@ If you encounter issues with pi-gen while Docker is in rootless mode, you can di
 
 ## Quick Wi-Fi / SSH configuration helpers
 
-Two helper scripts let you patch an existing image or an SD card without rebuilding:
+### tools/prepare_sdcard.py
 
-### install-sdcard.sh
-
+Install the Python dependencies once before running the helper:
+```
+pip install -r requirements.txt
+```
 Usage:
 ```
-sudo ./install-sdcard.sh <image-file> <sd-card-device> [COUNTRY] [SSID] [PASS]
+sudo python3 tools/prepare_sdcard.py deploy/2025-10-05-casanode-os.img --output-image /dev/sda --enable-ssh-eth0
 ```
-Parameters:
-- COUNTRY: 2-letter ISO code (default FR)
-- SSID: Access Point SSID (default Casanode-alpha1)
-- PASS: WPA2 passphrase (8–63 chars). If omitted you'll be prompted (default fallback stored internally).
+Key features:
+- Clones an input .img to a file or block device, then patches Wi-Fi credentials, regulatory domain, and API auth token.
+- Generates Wi-Fi and browser QR codes plus a `device.json` summary under `sdcard/<ssid>/`.
+- Offers CLI overrides for SSID, password, country, auth token, IP/port, and can drop the `enable-ssh-eth0` marker.
 
-Features:
-- Validates passphrase length.
-- Writes boot/casanode/device.json consumed by first-boot logic.
-- Optionally creates /boot/enable-ssh-eth0 to allow SSH on ethernet (firewall controlled).
-- Updates hostapd.conf (if already present) to reflect SSID/PASS so first boot immediately matches config.
+Run the script without `--output-image` to clone the image into `sdcard/<ssid>/` automatically.
 
 ### create-img.sh
 
@@ -123,7 +121,7 @@ Usage:
 ```
 sudo ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS]
 ```
-Patches the image file directly (loop‑mount) with the same Wi‑Fi + country data, enforcing passphrase length.
+Patches the image file directly (loop-mount) with the same Wi-Fi + country data, enforcing passphrase length.
 
 ### Firewall behavior
 
