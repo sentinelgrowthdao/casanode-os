@@ -4,8 +4,8 @@ set -euo pipefail
 
 PI_GEN_DIR=./pi-gen
 CASANODE_DIR=./casanode
-SENTINEL_IMAGE="wajatmaka/sentinel-aarch64-alpine:v0.7.1"
-SENTINEL_TAR_PATH="${CASANODE_DIR}/files/docker/sentinel-aarch64-alpine-v0.7.1.tar"
+SENTINEL_IMAGE="ghcr.io/sentinel-official/sentinel-dvpnx:latest"
+SENTINEL_TAR_PATH="${CASANODE_DIR}/files/docker/sentinel-dvpnx-latest.tar"
 IMAGE_PATH=""
 
 # Variables for parameters
