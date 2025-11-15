@@ -55,28 +55,48 @@ You can customize the image generation process using the following optional para
 
 ## Using the Image
 
-After generating the image, follow these steps to install it on your Raspberry Pi:
+After generating the image, use one of the following scripts to install the OS on an SD card:
 
-1. Download and install the Raspberry Pi Imager software available [here](https://www.raspberrypi.com/software/).
-2. Launch Raspberry Pi Imager.
-3. Select the type of hardware.
-4. Choose the generated image by selecting "custom image" at the bottom of the list.
-5. Insert the SD card into your computer and click on "Choose Storage" to select it.
-6. You can set custom options such as a custom user, hostname, or Wi-Fi connection.
-7. Once the SD card is ready, insert it into your Raspberry Pi and power it on.
+- `tools/prepare_sdcard.py`: Clones the image to an SD card and allows pre-configuration of Wi-Fi, SSH, and other settings.
+- `tools/create-img.sh`: Patches the image with Wi-Fi settings and prepares it for SD card installation.
 
-After a few minutes, your Casanode will be ready to use.
+### tools/prepare_sdcard.py
 
-### Wi-Fi Access Point
+These helpers allow you to install the generated OS onto an SD card and pre-configure it for seamless deployment.
 
-To avoid Wi-Fi being blocked by `rfkill`, provide a two-letter country code in the `device.json` file located on the boot
-partition. An example configuration is available in `device.json.example`.
+Install the Python dependencies once before running the helper:
+```
+pip install -r requirements.txt
+```
+Usage:
+```
+sudo python3 tools/prepare_sdcard.py deploy/2025-10-05-casanode-os.img --output-image /dev/sda --enable-ssh-eth0
+```
+Key features:
+- Clones an input .img to a file or block device, then patches Wi-Fi credentials, regulatory domain, and API auth token.
+- Generates Wi-Fi and browser QR codes plus a `device.json` summary under `sdcard/<ssid>/`.
+- Offers CLI overrides for SSID, password, country, auth token, IP/port, and can drop the `enable-ssh-eth0` marker.
 
-## Configuring Casanode
+Run the script without `--output-image` to clone the image into `sdcard/<ssid>/` automatically.
 
-To connect to Casanode, use the Android application available in this repository: [casanode-mobile-app](https://github.com/sentinelgrowthdao/casanode-mobile-app).
+### tools/create-img.sh
 
-With this application, you can interact with your Casanode and finalize its configuration to make it fully operational.
+This script patches a base image with fixed values for the wifi access point (SSID and password).
+
+Usage:
+```
+sudo ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS]
+```
+Patches the image file directly (loop-mount) with the same Wi-Fi + country data, enforcing passphrase length.
+
+Once the image is patched, you can install the OS on an SD card using the `dd` command. This will write the patched image directly to the SD card.
+
+Example command:
+```
+sudo dd if=<patched-image> of=<sd-card-device> bs=4M conv=fsync status=progress
+```
+
+Replace `<patched-image>` with the path to the patched image file (e.g., the output from `tools/create-img.sh`), and `<sd-card-device>` with the device path of your SD card (e.g., `/dev/sda`). Ensure the SD card is not mounted before running the command.
 
 ## Support and Troubleshooting
 
@@ -95,46 +115,6 @@ If you encounter issues with pi-gen while Docker is in rootless mode, you can di
 	```bash
 	sudo systemctl restart docker
 	```
-
-## Quick Wi-Fi / SSH configuration helpers
-
-### tools/prepare_sdcard.py
-
-Install the Python dependencies once before running the helper:
-```
-pip install -r requirements.txt
-```
-Usage:
-```
-sudo python3 tools/prepare_sdcard.py deploy/2025-10-05-casanode-os.img --output-image /dev/sda --enable-ssh-eth0
-```
-Key features:
-- Clones an input .img to a file or block device, then patches Wi-Fi credentials, regulatory domain, and API auth token.
-- Generates Wi-Fi and browser QR codes plus a `device.json` summary under `sdcard/<ssid>/`.
-- Offers CLI overrides for SSID, password, country, auth token, IP/port, and can drop the `enable-ssh-eth0` marker.
-
-Run the script without `--output-image` to clone the image into `sdcard/<ssid>/` automatically.
-
-### create-img.sh
-
-Usage:
-```
-sudo ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS]
-```
-Patches the image file directly (loop-mount) with the same Wi-Fi + country data, enforcing passphrase length.
-
-### Firewall behavior
-
-`casanode-firewall.sh`:
-- Accepts all traffic on wlan0 (explicit extra ACCEPT for tcp/80 for clarity).
-- On eth0, SSH (tcp/22) allowed only if one of:
-	* /boot/enable-ssh-eth0 exists
-	* /boot/firmware/enable-ssh-eth0 exists
-	* Environment variable CASANODE_ALLOW_ETH0_SSH=1 when the firewall script runs
-- Then everything else on eth0 is dropped.
-
-### Security note
-Change the default Wi‑Fi passphrase before distributing devices. Consider adding a random generator pipeline later.
 
 ## License
 
