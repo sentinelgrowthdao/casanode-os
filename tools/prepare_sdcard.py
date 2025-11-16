@@ -97,6 +97,12 @@ def slugify(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]", "_", value)
 
 
+def require_commands(*commands: str) -> None:
+    missing = [cmd for cmd in commands if shutil.which(cmd) is None]
+    if missing:
+        raise PreparationError(f"Missing required command(s): {', '.join(missing)}")
+
+
 def is_block_device(path: Path) -> bool:
     try:
         mode = os.stat(path).st_mode
@@ -298,12 +304,33 @@ def configure_image(target: Path, ssid: str, password: str, country: str, auth_t
     print("Configuration applied to image.")
 
 
+def expand_rootfs(target: Path) -> None:
+    if not is_block_device(target):
+        raise PreparationError("--expand-rootfs requires that the destination is a block device (e.g. /dev/sdX).")
+    require_commands("parted", "e2fsck", "resize2fs")
+    ensure_root_required("Root filesystem expansion")
+
+    device = str(target)
+    _, root_part = compute_partitions(target)
+    print(f"Expanding root filesystem on {root_part} ...")
+    try:
+        subprocess.run(["parted", "-s", device, "resizepart", "2", "100%"], check=True)
+        if shutil.which("partprobe"):
+            subprocess.run(["partprobe", device], check=False)
+        subprocess.run(["e2fsck", "-f", "-y", root_part], check=True)
+        subprocess.run(["resize2fs", root_part], check=True)
+    except subprocess.CalledProcessError as exc:
+        raise PreparationError("Failed to expand root filesystem.") from exc
+    print("Root filesystem expansion complete.")
+
+
 def make_url_qr(url: str, output: Path) -> None:
     qr = qrcode.QRCode(version=None, error_correction=ERROR_CORRECT_Q, box_size=10, border=4)
     qr.add_data(url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    img.save(output)
+    with output.open("wb") as handle:
+        img.save(handle)
 
 
 def build_wifi_payload(ssid: str, password: str, security: str = "WPA", hidden: bool = False) -> str:
@@ -328,7 +355,8 @@ def build_wifi_payload(ssid: str, password: str, security: str = "WPA", hidden: 
 def make_wifi_qr(ssid: str, password: str, output: Path, security: str = "WPA", hidden: bool = False) -> None:
     payload = build_wifi_payload(ssid, password, security=security, hidden=hidden)
     img = qrcode.make(payload)
-    img.save(output)
+    with output.open("wb") as handle:
+        img.save(handle)
 
 
 def main() -> int:
@@ -355,6 +383,9 @@ def main() -> int:
             raise PreparationError(f"Destination image not found: {output_image}")
 
     configure_image(output_image, ssid, password, country, auth_token, args.enable_ssh_eth0)
+
+    if is_block_device(output_image):
+        expand_rootfs(output_image)
 
     url = args.url_template.format(ip=args.ip, port=args.port, token=auth_token)
 
