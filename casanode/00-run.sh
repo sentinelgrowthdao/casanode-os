@@ -109,8 +109,9 @@ fi
 
 # Include Sentinel docker image tarball harvested at build time if available
 install -d "${ROOTFS_DIR}/opt/casanode/docker"
-SENTINEL_TAR_SRC="files/docker/sentinel-aarch64-alpine-v0.7.1.tar"
-SENTINEL_TAR_DST="${ROOTFS_DIR}/opt/casanode/docker/sentinel-aarch64-alpine-v0.7.1.tar"
+SENTINEL_TAR_NAME="sentinel-dvpnx-latest.tar"
+SENTINEL_TAR_SRC="files/docker/${SENTINEL_TAR_NAME}"
+SENTINEL_TAR_DST="${ROOTFS_DIR}/opt/casanode/docker/${SENTINEL_TAR_NAME}"
 if [ -f "${SENTINEL_TAR_SRC}" ]; then
   install -m 644 "${SENTINEL_TAR_SRC}" "${SENTINEL_TAR_DST}"
 else
