@@ -36,8 +36,8 @@ EOF
 # Install casanode-api & casanode-ui
 echo "Installing casanode-api & casanode-ui (version <deb-version>)..."
 on_chroot << 'EOF'
-echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ble/ stable main" > /etc/apt/sources.list.d/casanode-ble.list
-echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-mobile-app/ stable main" > /etc/apt/sources.list.d/casanode-mobile-app.list
+echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-api/ stable main" > /etc/apt/sources.list.d/casanode-api.list
+echo "deb [trusted=yes] https://sentinelgrowthdao.github.io/casanode-ui/ stable main" > /etc/apt/sources.list.d/casanode-ui.list
 apt-get update
 # Safe version handling (placeholder <deb-version> may remain if not replaced)
 VER="${CASANODE_VERSION:-<deb-version>}"
