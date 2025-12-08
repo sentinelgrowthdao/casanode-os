@@ -87,6 +87,9 @@ apt-get install -y dhcpcd5 rfkill || true
 systemctl mask systemd-rfkill.service systemd-rfkill.socket || true
 # Use dhcpcd to manage addresses (required for static IP on wlan0)
 systemctl enable dhcpcd || true
+# Provide network-online.target using dhcpcd (needed before adding Wants/After elsewhere)
+install -m 644 files/dhcpcd-wait-online.service "${ROOTFS_DIR}/etc/systemd/system/dhcpcd-wait-online.service"
+systemctl enable dhcpcd-wait-online.service || true
 # Do not let wpa_supplicant manage wlan0 in AP mode
 systemctl mask wpa_supplicant.service wpa_supplicant@wlan0.service || true
 EOF

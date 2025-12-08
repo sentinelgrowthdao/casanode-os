@@ -1,0 +1,14 @@
+[Unit]
+Description=Wait for dhcpcd to obtain an address
+Documentation=man:dhcpcd(8)
+Wants=network.target
+After=network.target dhcpcd.service
+Before=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/dhcpcd -w
+RemainAfterExit=yes
+
+[Install]
+WantedBy=network-online.target
