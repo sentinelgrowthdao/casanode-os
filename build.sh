@@ -5,7 +5,8 @@ set -euo pipefail
 PI_GEN_DIR=./pi-gen
 CASANODE_DIR=./casanode
 SENTINEL_IMAGE="ghcr.io/sentinel-official/sentinel-dvpnx:latest"
-SENTINEL_TAR_PATH="${CASANODE_DIR}/files/docker/sentinel-dvpnx-latest.tar"
+SENTINEL_TAR_ARM64="${CASANODE_DIR}/files/docker/sentinel-dvpnx-arm64.tar"
+SENTINEL_TAR_AMD64="${CASANODE_DIR}/files/docker/sentinel-dvpnx-amd64.tar"
 IMAGE_PATH=""
 
 # Variables for parameters
@@ -66,31 +67,42 @@ initialize_pi_gen_submodule()
 
 prepare_sentinel_image_tar()
 {
-	mkdir -p "$(dirname "${SENTINEL_TAR_PATH}")"
+	mkdir -p "$(dirname "${SENTINEL_TAR_ARM64}")"
 
 	if ! command -v docker >/dev/null 2>&1; then
 		echo "[build] Docker not available on host; skipping Sentinel image packaging."
-		rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
+		rm -f "${SENTINEL_TAR_ARM64}" "${SENTINEL_TAR_AMD64}" >/dev/null 2>&1 || true
 		return 0
 	fi
 
-	if ! docker image inspect "${SENTINEL_IMAGE}" >/dev/null 2>&1; then
-		echo "[build] Pulling ${SENTINEL_IMAGE}..."
-		if ! docker pull "${SENTINEL_IMAGE}"; then
-			echo "[build] Failed to pull ${SENTINEL_IMAGE}; skipping Sentinel image packaging." >&2
-			rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
-			return 0
+	# Pull and save ARM64 version
+	echo "[build] Pulling ${SENTINEL_IMAGE} for arm64..."
+	if docker pull --platform linux/arm64 "${SENTINEL_IMAGE}"; then
+		tmp_tar="${SENTINEL_TAR_ARM64}.tmp"
+		if docker save -o "${tmp_tar}" "${SENTINEL_IMAGE}"; then
+			mv "${tmp_tar}" "${SENTINEL_TAR_ARM64}"
+			echo "[build] Saved ${SENTINEL_IMAGE} (arm64) to ${SENTINEL_TAR_ARM64}"
+		else
+			echo "[build] Failed to save ${SENTINEL_IMAGE} (arm64) to ${SENTINEL_TAR_ARM64}" >&2
+			rm -f "${tmp_tar}" >/dev/null 2>&1 || true
 		fi
+	else
+		echo "[build] Failed to pull ${SENTINEL_IMAGE} for arm64; skipping." >&2
 	fi
 
-	tmp_tar="${SENTINEL_TAR_PATH}.tmp"
-	if docker save -o "${tmp_tar}" "${SENTINEL_IMAGE}"; then
-		mv "${tmp_tar}" "${SENTINEL_TAR_PATH}"
-		echo "[build] Saved ${SENTINEL_IMAGE} to ${SENTINEL_TAR_PATH}"
+	# Pull and save AMD64 version
+	echo "[build] Pulling ${SENTINEL_IMAGE} for amd64..."
+	if docker pull --platform linux/amd64 "${SENTINEL_IMAGE}"; then
+		tmp_tar="${SENTINEL_TAR_AMD64}.tmp"
+		if docker save -o "${tmp_tar}" "${SENTINEL_IMAGE}"; then
+			mv "${tmp_tar}" "${SENTINEL_TAR_AMD64}"
+			echo "[build] Saved ${SENTINEL_IMAGE} (amd64) to ${SENTINEL_TAR_AMD64}"
+		else
+			echo "[build] Failed to save ${SENTINEL_IMAGE} (amd64) to ${SENTINEL_TAR_AMD64}" >&2
+			rm -f "${tmp_tar}" >/dev/null 2>&1 || true
+		fi
 	else
-		echo "[build] Failed to save ${SENTINEL_IMAGE} to ${SENTINEL_TAR_PATH}" >&2
-		rm -f "${tmp_tar}" >/dev/null 2>&1 || true
-		rm -f "${SENTINEL_TAR_PATH}" >/dev/null 2>&1 || true
+		echo "[build] Failed to pull ${SENTINEL_IMAGE} for amd64; skipping." >&2
 	fi
 }
 

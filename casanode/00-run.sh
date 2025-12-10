@@ -74,6 +74,9 @@ done
 nginx -t || (echo '----- nginx error context -----'; grep -Hn 'upstream' /opt/casanode/nginx/*.conf || true; exit 1)
 EOF
 
+# Provide network-online.target using dhcpcd (needed before adding Wants/After elsewhere)
+install -m 644 files/dhcpcd-wait-online.service "${ROOTFS_DIR}/etc/systemd/system/dhcpcd-wait-online.service"
+
 # Network stack prep for AP mode (remove conflicts, ensure dhcpcd)
 echo "Preparing network stack for AP..."
 on_chroot << 'EOF'
@@ -87,8 +90,6 @@ apt-get install -y dhcpcd5 rfkill || true
 systemctl mask systemd-rfkill.service systemd-rfkill.socket || true
 # Use dhcpcd to manage addresses (required for static IP on wlan0)
 systemctl enable dhcpcd || true
-# Provide network-online.target using dhcpcd (needed before adding Wants/After elsewhere)
-install -m 644 files/dhcpcd-wait-online.service "${ROOTFS_DIR}/etc/systemd/system/dhcpcd-wait-online.service"
 systemctl enable dhcpcd-wait-online.service || true
 # Do not let wpa_supplicant manage wlan0 in AP mode
 systemctl mask wpa_supplicant.service wpa_supplicant@wlan0.service || true
@@ -112,7 +113,7 @@ fi
 
 # Include Sentinel docker image tarball harvested at build time if available
 install -d "${ROOTFS_DIR}/opt/casanode/docker"
-SENTINEL_TAR_NAME="sentinel-dvpnx-latest.tar"
+SENTINEL_TAR_NAME="sentinel-dvpnx-arm64.tar"
 SENTINEL_TAR_SRC="files/docker/${SENTINEL_TAR_NAME}"
 SENTINEL_TAR_DST="${ROOTFS_DIR}/opt/casanode/docker/${SENTINEL_TAR_NAME}"
 if [ -f "${SENTINEL_TAR_SRC}" ]; then
@@ -161,6 +162,10 @@ install -m 755 files/casanode-firewall.sh "${ROOTFS_DIR}/usr/local/sbin/casanode
 install -m 644 files/casanode-firewall.service "${ROOTFS_DIR}/etc/systemd/system/casanode-firewall.service"
 
 on_chroot <<'EOF'
+# Load Sentinel Docker image if available
+if [ -f "/opt/casanode/docker/sentinel-dvpnx-arm64.tar" ]; then
+  docker load < "/opt/casanode/docker/sentinel-dvpnx-arm64.tar" || echo "Failed to load Sentinel image."
+fi
 systemctl unmask hostapd
 systemctl enable hostapd
 systemctl enable dnsmasq
