@@ -111,15 +111,27 @@ if [ -f files/device.json ]; then
   install -m 600 files/device.json "${ROOTFS_DIR}/boot/firmware/casanode/device.json"
 fi
 
-# Include Sentinel docker image tarball harvested at build time if available
+# Include Sentinel docker image tarballs harvested at build time if available
 install -d "${ROOTFS_DIR}/opt/casanode/docker"
-SENTINEL_TAR_NAME="sentinel-dvpnx-arm64.tar"
-SENTINEL_TAR_SRC="files/docker/${SENTINEL_TAR_NAME}"
-SENTINEL_TAR_DST="${ROOTFS_DIR}/opt/casanode/docker/${SENTINEL_TAR_NAME}"
-if [ -f "${SENTINEL_TAR_SRC}" ]; then
-  install -m 644 "${SENTINEL_TAR_SRC}" "${SENTINEL_TAR_DST}"
+# Copy ARM64 version
+SENTINEL_TAR_ARM64_NAME="sentinel-dvpnx-arm64.tar"
+SENTINEL_TAR_ARM64_SRC="files/docker/${SENTINEL_TAR_ARM64_NAME}"
+SENTINEL_TAR_ARM64_DST="${ROOTFS_DIR}/opt/casanode/docker/${SENTINEL_TAR_ARM64_NAME}"
+if [ -f "${SENTINEL_TAR_ARM64_SRC}" ]; then
+  install -m 644 "${SENTINEL_TAR_ARM64_SRC}" "${SENTINEL_TAR_ARM64_DST}"
+  rm -f "${SENTINEL_TAR_ARM64_SRC}"
 else
-  echo "[build] Sentinel docker image tarball not found at ${SENTINEL_TAR_SRC}; skipping copy."
+  echo "[build] Sentinel docker image tarball (ARM64) not found at ${SENTINEL_TAR_ARM64_SRC}; skipping copy."
+fi
+# Copy AMD64 version
+SENTINEL_TAR_AMD64_NAME="sentinel-dvpnx-amd64.tar"
+SENTINEL_TAR_AMD64_SRC="files/docker/${SENTINEL_TAR_AMD64_NAME}"
+SENTINEL_TAR_AMD64_DST="${ROOTFS_DIR}/opt/casanode/docker/${SENTINEL_TAR_AMD64_NAME}"
+if [ -f "${SENTINEL_TAR_AMD64_SRC}" ]; then
+  install -m 644 "${SENTINEL_TAR_AMD64_SRC}" "${SENTINEL_TAR_AMD64_DST}"
+  rm -f "${SENTINEL_TAR_AMD64_SRC}"
+else
+  echo "[build] Sentinel docker image tarball (AMD64) not found at ${SENTINEL_TAR_AMD64_SRC}; skipping copy."
 fi
 
 # Add wlan0 static IP stanza if not present
