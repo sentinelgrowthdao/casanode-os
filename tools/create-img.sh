@@ -16,11 +16,13 @@ set -euo pipefail
 ############################################################
 
 # Patch an existing Raspberry Pi OS image with Casanode Wi-Fi configuration
-# Usage: ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS] [AUTH_TOKEN]
+# Usage: ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS] [AUTH_TOKEN] [SYSTEM_PASSWORD] [ENABLE_SSH_WLAN0]
 # - If OUTPUT not provided, will create <base>-patched.img
 # - COUNTRY default: CN
 # - SSID default: Casanode-alpha1
-# - PASS default: alpha1 (must be 8-63 chars; you should override in production)
+# - PASS default: random 16-char value (must be 8-63 chars)
+# - SYSTEM_PASSWORD default: random 16-char value for user sentinel
+# - ENABLE_SSH_WLAN0: 0 by default, set to 1 to allow SSH from Wi-Fi
 # - Applies:
 #   * device.json on boot with provided (or default) values
 #   * Sets cfg80211 regdom, wpa_supplicant country, hostapd country + SSID/passphrase
@@ -38,6 +40,11 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
+generate_password() {
+  local length="${1:-16}"
+  hexdump -vn "$length" -e '/1 "%02x"' /dev/urandom | cut -c1-"$length"
+}
+
 BASE_IMG="$1"
 if [ ! -f "$BASE_IMG" ]; then
   echo "Base image not found: $BASE_IMG" >&2
@@ -46,19 +53,36 @@ fi
 OUT_IMG="${2:-${BASE_IMG%.img}-patched.img}"
 COUNTRY="${3:-US}"
 SSID="${4:-Casanode-alpha1}"
-PASS="${5:-casanode@alpha1}"
+PASS="${5:-$(generate_password 16)}"
 AUTH_TOKEN="${6:-422f069c-4a48-4499-872d-30f365320d76}"
+SYSTEM_USER="sentinel"
+SYSTEM_PASSWORD="${7:-$(generate_password 16)}"
+ENABLE_SSH_WLAN0="${8:-0}"
 
 echo "Base image: $BASE_IMG" >&2
 echo "Output image: $OUT_IMG" >&2
 echo "Wi-Fi Country: $COUNTRY" >&2
 echo "Wi-Fi SSID: $SSID" >&2
 echo "Wi-Fi Passphrase: $PASS" >&2
+echo "System User: $SYSTEM_USER" >&2
+echo "System Password: $SYSTEM_PASSWORD" >&2
+echo "Allow SSH on Wi-Fi: $ENABLE_SSH_WLAN0" >&2
 echo "API Auth Token: $AUTH_TOKEN" >&2
 
 LEN=${#PASS}
 if [ $LEN -lt 8 ] || [ $LEN -gt 63 ]; then
   echo "Error: Wi-Fi passphrase length must be 8-63 characters (got $LEN)." >&2
+  exit 1
+fi
+
+SYS_LEN=${#SYSTEM_PASSWORD}
+if [ $SYS_LEN -lt 8 ] || [ $SYS_LEN -gt 63 ]; then
+  echo "Error: system password length must be 8-63 characters (got $SYS_LEN)." >&2
+  exit 1
+fi
+
+if [ "$ENABLE_SSH_WLAN0" != "0" ] && [ "$ENABLE_SSH_WLAN0" != "1" ]; then
+  echo "Error: ENABLE_SSH_WLAN0 must be 0 or 1 (got $ENABLE_SSH_WLAN0)." >&2
   exit 1
 fi
 
@@ -106,11 +130,19 @@ cat > mnt-boot/casanode/device.json <<EOF
 {
   "ssid": "${SSID}",
   "password": "${PASS}",
-  "country": "${COUNTRY}"
+  "country": "${COUNTRY}",
+  "system_user": "${SYSTEM_USER}",
+  "system_password": "${SYSTEM_PASSWORD}",
+  "enable_ssh_wlan0": ${ENABLE_SSH_WLAN0}
 }
 EOF
 
 touch mnt-boot/ssh
+if [ "$ENABLE_SSH_WLAN0" = "1" ]; then
+  touch mnt-boot/enable-ssh-wlan0
+else
+  rm -f mnt-boot/enable-ssh-wlan0
+fi
 
 # COUNTRY already set (can be overridden by arg)
 
@@ -134,6 +166,7 @@ if [ -f mnt-root/etc/hostapd/hostapd.conf ]; then
   grep -q '^country_code=' mnt-root/etc/hostapd/hostapd.conf || echo "country_code=${COUNTRY}" >> mnt-root/etc/hostapd/hostapd.conf
   sed -i "s/^ssid=.*/ssid=${SSID//\//\/}/" mnt-root/etc/hostapd/hostapd.conf || true
   sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${PASS//\//\/}/" mnt-root/etc/hostapd/hostapd.conf || true
+  grep -q '^ap_isolate=' mnt-root/etc/hostapd/hostapd.conf || echo 'ap_isolate=1' >> mnt-root/etc/hostapd/hostapd.conf
 fi
 
 echo "Updating unblock script default country..." >&2

@@ -34,6 +34,7 @@ from qrcode.constants import ERROR_CORRECT_Q
 DEFAULT_COUNTRY = "FR"
 DEFAULT_IP = "192.168.50.1"
 DEFAULT_PORT = 14045
+DEFAULT_SYSTEM_USER = "sentinel"
 IMAGE_COPY_BUFFER = 4 * 1024 * 1024
 
 
@@ -58,6 +59,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--country", default=DEFAULT_COUNTRY, help="Two-letter regulatory country code.")
     parser.add_argument("--ssid", help="Custom Wi-Fi SSID. Defaults to Casanode-<random>.")
     parser.add_argument("--password", help="Custom Wi-Fi passphrase (8-63 chars). Defaults to 16 random characters.")
+    parser.add_argument("--system-user", default=DEFAULT_SYSTEM_USER, help="Local admin username to provision. Defaults to sentinel.")
+    parser.add_argument("--system-password", help="Local admin password (8-63 chars). Defaults to 16 random characters.")
     parser.add_argument("--auth-token", help="Custom API auth token. Defaults to a random UUID4.")
     parser.add_argument(
         "--url-template",
@@ -70,6 +73,11 @@ def parse_args() -> argparse.Namespace:
         "--enable-ssh-eth0",
         action="store_true",
         help="Create enable-ssh-eth0 marker on the boot partition.",
+    )
+    parser.add_argument(
+        "--enable-ssh-wlan0",
+        action="store_true",
+        help="Create enable-ssh-wlan0 marker on the boot partition to allow SSH from Wi-Fi.",
     )
     parser.add_argument(
         "--skip-copy",
@@ -196,16 +204,35 @@ def mount_partitions(target: Path) -> Iterator[Tuple[Path, Path]]:
             subprocess.run(["losetup", "-d", loop_device], check=True)
 
 
-def write_device_json(boot_path: Path, ssid: str, password: str, country: str) -> None:
+def write_device_json(
+    boot_path: Path,
+    ssid: str,
+    password: str,
+    country: str,
+    system_user: str,
+    system_password: str,
+    enable_ssh_wlan0: bool,
+) -> None:
     casanode_dir = boot_path / "casanode"
     casanode_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "ssid": ssid,
         "password": password,
         "country": country,
+        "system_user": system_user,
+        "system_password": system_password,
+        "enable_ssh_wlan0": enable_ssh_wlan0,
     }
     (casanode_dir / "device.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     (boot_path / "ssh").touch(exist_ok=True)
+
+
+def set_boot_marker(boot_path: Path, marker_name: str, enabled: bool) -> None:
+    marker_path = boot_path / marker_name
+    if enabled:
+        marker_path.touch(exist_ok=True)
+    else:
+        marker_path.unlink(missing_ok=True)
 
 
 def update_wpa_supplicant(root_path: Path, country: str) -> None:
@@ -255,6 +282,7 @@ def update_hostapd(root_path: Path, ssid: str, password: str, country: str) -> N
     replace_or_append(lines, "country_code", country)
     replace_or_append(lines, "ssid", ssid)
     replace_or_append(lines, "wpa_passphrase", password)
+    replace_or_append(lines, "ap_isolate", "1")
     conf_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -288,18 +316,33 @@ def update_casanode_conf(root_path: Path, auth_token: str) -> None:
     conf_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def configure_image(target: Path, ssid: str, password: str, country: str, auth_token: str, enable_ssh_eth0: bool) -> None:
+def reset_firstboot_flag(root_path: Path) -> None:
+    (root_path / "etc/casanode_ap_configured").unlink(missing_ok=True)
+
+
+def configure_image(
+    target: Path,
+    ssid: str,
+    password: str,
+    country: str,
+    system_user: str,
+    system_password: str,
+    auth_token: str,
+    enable_ssh_eth0: bool,
+    enable_ssh_wlan0: bool,
+) -> None:
     ensure_root_required("Configuring image partitions")
     with mount_partitions(target) as (boot_path, root_path):
         print(f"Mount points: boot -> {boot_path}, root -> {root_path}")
-        write_device_json(boot_path, ssid, password, country)
-        if enable_ssh_eth0:
-            (boot_path / "enable-ssh-eth0").touch(exist_ok=True)
+        write_device_json(boot_path, ssid, password, country, system_user, system_password, enable_ssh_wlan0)
+        set_boot_marker(boot_path, "enable-ssh-eth0", enable_ssh_eth0)
+        set_boot_marker(boot_path, "enable-ssh-wlan0", enable_ssh_wlan0)
         update_cfg80211(root_path, country)
         update_wpa_supplicant(root_path, country)
         update_hostapd(root_path, ssid, password, country)
         update_unblock_script(root_path, country)
         update_casanode_conf(root_path, auth_token)
+        reset_firstboot_flag(root_path)
         os.sync()
     print("Configuration applied to image.")
 
@@ -366,6 +409,12 @@ def main() -> int:
     password = args.password or generate_random_password()
     if not (8 <= len(password) <= 63):
         raise PreparationError("Wi-Fi password must be between 8 and 63 characters.")
+    system_user = args.system_user.strip()
+    if not system_user:
+        raise PreparationError("System user must not be empty.")
+    system_password = args.system_password or generate_random_password()
+    if not (8 <= len(system_password) <= 63):
+        raise PreparationError("System password must be between 8 and 63 characters.")
     auth_token = args.auth_token or str(uuid.uuid4())
     country = args.country.upper()
 
@@ -382,7 +431,17 @@ def main() -> int:
         if not output_image.exists() and not is_block_device(output_image):
             raise PreparationError(f"Destination image not found: {output_image}")
 
-    configure_image(output_image, ssid, password, country, auth_token, args.enable_ssh_eth0)
+    configure_image(
+        output_image,
+        ssid,
+        password,
+        country,
+        system_user,
+        system_password,
+        auth_token,
+        args.enable_ssh_eth0,
+        args.enable_ssh_wlan0,
+    )
 
     if is_block_device(output_image):
         expand_rootfs(output_image)
@@ -398,6 +457,8 @@ def main() -> int:
         "ssid": ssid,
         "password": password,
         "country": country,
+        "system_user": system_user,
+        "system_password": system_password,
         "auth_token": auth_token,
         "api_url": url,
         "wifi_qr": wifi_qr_path.name,
@@ -405,6 +466,7 @@ def main() -> int:
         "image": str(output_image),
         "source_image": str(args.input_image),
         "enable_ssh_eth0": args.enable_ssh_eth0,
+        "enable_ssh_wlan0": args.enable_ssh_wlan0,
         "ip": args.ip,
         "port": args.port,
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
