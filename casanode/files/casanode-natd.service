@@ -1,0 +1,16 @@
+[Unit]
+Description=Casanode port mapping and firewall daemon
+After=casanode-firewall.service dhcpcd.service network.target
+Wants=casanode-firewall.service dhcpcd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/casanode-natd.py
+Restart=always
+RestartSec=5s
+RuntimeDirectory=casanode-natd
+StateDirectory=casanode-natd
+LogsDirectory=casanode
+
+[Install]
+WantedBy=multi-user.target

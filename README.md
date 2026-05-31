@@ -104,6 +104,10 @@ Replace `<patched-image>` with the path to the patched image file (e.g., the out
 
 For any questions or issues not covered in the documentation, please open an issue on the GitHub repository.
 
+## Documentation
+
+Additional design and service documentation lives under [documentions/](documentions/README.md).
+
 ### Note on Docker Rootless Mode
 
 If you encounter issues with pi-gen while Docker is in rootless mode, you can disable rootless mode and restart Docker in root mode:

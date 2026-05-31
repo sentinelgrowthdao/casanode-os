@@ -24,6 +24,11 @@ iptables -A FORWARD -i wlan0 -o eth0 -m conntrack --ctstate NEW,ESTABLISHED,RELA
 iptables -A FORWARD -i eth0 -o wlan0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
+# Dedicated chain for port openings managed by casanode-natd
+iptables -N CASANODE_PORTS 2>/dev/null || true
+iptables -F CASANODE_PORTS
+iptables -A INPUT -i eth0 -j CASANODE_PORTS
+
 # Optionally allow SSH on eth0 if marker file exists
 if [ -f /boot/enable-ssh-eth0 ] || [ -f /boot/firmware/enable-ssh-eth0 ] || [ "${CASANODE_ALLOW_ETH0_SSH:-0}" = "1" ]; then
     iptables -A INPUT -i eth0 -p tcp --dport 22 -j ACCEPT

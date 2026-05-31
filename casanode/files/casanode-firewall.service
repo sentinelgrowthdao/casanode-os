@@ -2,6 +2,7 @@
 Description=Configure Casanode firewall
 After=casanode-unblock-wifi.service dhcpcd.service systemd-sysctl.service
 Wants=casanode-unblock-wifi.service dhcpcd.service
+Before=casanode-natd.service
 
 [Service]
 Type=oneshot

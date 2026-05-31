@@ -173,6 +173,10 @@ install -m 644 files/casanode-unblock-wifi.service "${ROOTFS_DIR}/etc/systemd/sy
 install -m 755 files/casanode-firewall.sh "${ROOTFS_DIR}/usr/local/sbin/casanode-firewall.sh"
 install -m 644 files/casanode-firewall.service "${ROOTFS_DIR}/etc/systemd/system/casanode-firewall.service"
 
+# Install NAT port mapping daemon
+install -m 755 files/casanode-natd.py "${ROOTFS_DIR}/usr/local/sbin/casanode-natd.py"
+install -m 644 files/casanode-natd.service "${ROOTFS_DIR}/etc/systemd/system/casanode-natd.service"
+
 on_chroot <<'EOF'
 # Load Sentinel Docker image if available
 if [ -f "/opt/casanode/docker/sentinel-dvpnx-arm64.tar" ]; then
@@ -184,6 +188,7 @@ systemctl enable dnsmasq
 systemctl enable casanode-firstboot.service
 systemctl enable casanode-unblock-wifi.service
 systemctl enable casanode-firewall.service
+systemctl enable casanode-natd.service
 systemctl disable avahi-daemon || true
 EOF
 
