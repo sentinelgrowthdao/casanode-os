@@ -75,7 +75,8 @@ sudo python3 tools/prepare_sdcard.py deploy/2025-10-05-casanode-os.img --output-
 Key features:
 - Clones an input .img to a file or block device, then patches Wi-Fi credentials, regulatory domain, and API auth token.
 - Generates Wi-Fi and browser QR codes plus a `device.json` summary under `sdcard/<ssid>/`.
-- Offers CLI overrides for SSID, password, country, auth token, IP/port, and can drop the `enable-ssh-eth0` marker.
+- Generates a random local admin password for user `sentinel` unless overridden with `--system-password`.
+- Offers CLI overrides for SSID, Wi-Fi password, system password, country, auth token, IP/port, and can drop the `enable-ssh-eth0` and `enable-ssh-wlan0` markers.
 
 Run the script without `--output-image` to clone the image into `sdcard/<ssid>/` automatically.
 
@@ -88,6 +89,7 @@ Usage:
 sudo ./create-img.sh <base-image.img> [OUTPUT.img] [COUNTRY] [SSID] [PASS]
 ```
 Patches the image file directly (loop-mount) with the same Wi-Fi + country data, enforcing passphrase length.
+It also generates a random password for local user `sentinel` unless you pass `[SYSTEM_PASSWORD]` as the seventh argument, and you can enable SSH from Wi-Fi with `[ENABLE_SSH_WLAN0]=1` as the eighth argument.
 
 Once the image is patched, you can install the OS on an SD card using the `dd` command. This will write the patched image directly to the SD card.
 

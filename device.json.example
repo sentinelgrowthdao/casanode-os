@@ -1,5 +1,8 @@
 {
   "ssid": "Casanode-1234",
   "password": "MySecurePass123",
-  "country": "US"
+  "country": "US",
+  "system_user": "sentinel",
+  "system_password": "LocalAdminPass123",
+  "enable_ssh_wlan0": false
 }

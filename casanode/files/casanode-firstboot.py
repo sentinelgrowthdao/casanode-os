@@ -20,6 +20,7 @@ if os.path.exists(FLAG_FILE):
 # device.json provides explicit values; otherwise we leave the image defaults.
 default_ssid = "Casanode-SSID"
 default_password = "casanode"
+default_system_user = "sentinel"
 
 data = {}
 device_json_path = None
@@ -89,8 +90,30 @@ try:
 except Exception:
     pass
 
+# Ensure system user exists and has the specified password (if provided).
+def _ensure_system_user(username: str, password: str) -> None:
+    if not username or not password:
+        return
+    try:
+        check_user = subprocess.run(["id", username], check=False, capture_output=True)
+        if check_user.returncode != 0:
+            subprocess.run(["useradd", "-m", "-s", "/bin/bash", "-G", "sudo", username], check=True)
+        subprocess.run(["chpasswd"], input=f"{username}:{password}\n", text=True, check=True)
+    except Exception:
+        pass
+
 ssid_from_json = data.get("ssid") if isinstance(data, dict) else None
 password_from_json = data.get("password") if isinstance(data, dict) else None
+system_user = data.get("system_user") if isinstance(data, dict) else None
+system_password = data.get("system_password") if isinstance(data, dict) else None
+
+if not isinstance(system_user, str) or not system_user.strip():
+    system_user = default_system_user
+else:
+    system_user = system_user.strip()
+
+if isinstance(system_password, str) and system_password:
+    _ensure_system_user(system_user, system_password)
 
 # Only rewrite hostapd.conf if SSID or password was provided in device.json.
 updated = False
@@ -103,6 +126,7 @@ ssid={ssid}
 hw_mode=g
 channel=1
 ieee80211n=1
+ap_isolate=1
 wmm_enabled=1
 auth_algs=1
 wpa=2
