@@ -14,6 +14,7 @@ iptables -A INPUT -i wlan0 -p udp --dport 67 -j ACCEPT
 iptables -A INPUT -i wlan0 -p udp --dport 53 -j ACCEPT
 iptables -A INPUT -i wlan0 -p tcp --dport 53 -j ACCEPT
 iptables -A INPUT -i wlan0 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -i wlan0 -p tcp --dport 14045 -j ACCEPT
 if [ -f /boot/enable-ssh-wlan0 ] || [ -f /boot/firmware/enable-ssh-wlan0 ] || [ "${CASANODE_ALLOW_WLAN0_SSH:-0}" = "1" ]; then
     iptables -A INPUT -i wlan0 -p tcp --dport 22 -j ACCEPT
 fi
