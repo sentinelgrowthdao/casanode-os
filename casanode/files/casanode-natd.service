@@ -10,7 +10,6 @@ Restart=always
 RestartSec=5s
 RuntimeDirectory=casanode-natd
 StateDirectory=casanode-natd
-LogsDirectory=casanode
 
 [Install]
 WantedBy=multi-user.target
