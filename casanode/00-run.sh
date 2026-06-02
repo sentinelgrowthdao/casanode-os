@@ -104,8 +104,6 @@ install -m 600 files/wpa_supplicant.conf "${ROOTFS_DIR}/etc/wpa_supplicant/wpa_s
 # Create logrotate configuration
 echo "Creating logrotate configuration..."
 install -m 644 files/logrotate "${ROOTFS_DIR}/etc/logrotate.d/casanode"
-# Ensure the application log directory exists with writable permissions for the casanode user
-install -d -o casanode -g casanode -m 0775 "${ROOTFS_DIR}/var/log/casanode"
 # Configure wireless access point
 echo "Configuring access point..."
 mkdir -p "${ROOTFS_DIR}/boot/firmware/casanode"
